@@ -270,6 +270,8 @@ def main():
     parser.add_argument("--deterministic", action="store_true")
     parser.add_argument("--slip_prob", type=float, default=0.2)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--ent_coef", type=float, default=0.0,
+                    help="Entropy coefficient (SB3 default: 0.0)")
     parser.add_argument("--n_eval", type=int, default=1000)
     parser.add_argument("--output_dir", type=str, default="results")
     args = parser.parse_args()
@@ -307,7 +309,7 @@ def main():
         gae_lambda=0.95,
         clip_range=0.2,
         clip_range_vf=None,    # not in original PPO paper, disabled by default
-        ent_coef=0.0,          # SB3 default
+        ent_coef=args.ent_coef,    # SB3 default = 0.0
         vf_coef=0.5,
         max_grad_norm=0.5,
         seed=args.seed,
