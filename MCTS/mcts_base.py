@@ -1,0 +1,148 @@
+import gymnasium as gym
+import numpy as np
+import math
+from copy import deepcopy
+
+
+class Node:
+    """Represents a single node in the MCTS search tree."""
+
+    def __init__(self, state, parent, action):
+        self.state = state
+        self.parent: Node = parent
+        self.action = action
+        self.children: list[Node] = []
+        self.visits = 0  # Number of times this node was visited
+        self.value = 0.0  # Total value (reward) accumulated from simulations passing through this node
+        self.untried_actions = []
+        self.done = False  # Whether this node represents a terminal state
+
+    def is_fully_expanded(self):
+        # If no untried actions remain, this node is fully expanded
+        return len(self.untried_actions) == 0
+
+    def is_terminal(self):
+        return self.done
+
+    def uct_score(self, exploration_constant, min_value, max_value):
+        # UCT = normalize(Q) + exploration_constant * sqrt(ln(parent.visits) / visits)
+        # Normalizing Q to [0, 1] makes the exploration term comparable across the tree
+        if self.visits == 0:
+            return float("inf")
+        q = self.value / self.visits
+        value_range = max_value - min_value
+        normalized_q = (q - min_value) / value_range if value_range > 1e-8 else 0.5
+        score = normalized_q + exploration_constant * math.sqrt(math.log(self.parent.visits) / self.visits)
+        return score
+
+    def best_child(self, exploration_constant, min_value, max_value) -> "Node":
+        max_score = float("-inf")
+        best_child = None
+        for child in self.children:
+            score = child.uct_score(exploration_constant, min_value, max_value)
+            if score > max_score:
+                max_score = score
+                best_child = child
+        return best_child
+
+
+class MCTSBase:
+    """Monte Carlo Tree Search algorithm"""
+
+    def __init__(self, env: gym.Env, num_simulations, exploration_constant, max_rollout_depth):
+        self.env: gym.Env = env
+        self.num_simulations = num_simulations
+        self.exploration_constant = exploration_constant
+        self.max_rollout_depth = max_rollout_depth
+        self.min_value = float("inf")
+        self.max_value = float("-inf")
+
+    # Decides the best action to take from the given state by running MCTS simulations
+    def search(self, state):
+        self.min_value = float("inf")
+        self.max_value = float("-inf")
+        # Create the root node for the current state
+        root = Node(state=state, parent=None, action=None)
+        # No actions have been tried from the root yet, so initialize the untried actions to all possible actions
+        root.untried_actions = list(range(len(self.env.action_space)))
+
+        for _ in range(self.num_simulations):
+            # Selection: Start from the root and select child nodes until we reach a node that is not fully expanded or is terminal
+            node = self.select(root)
+            if not node.is_terminal():
+                child_node = self.expand(node)
+                node.children.append(child_node)
+                reward = self.rollout(child_node)
+                self.min_value = min(self.min_value, reward)
+                self.max_value = max(self.max_value, reward)
+                self.backpropagate(child_node, reward)
+
+        # Get best child fro the root
+        best_child = Node(state=None, parent=None, action=None)
+        for child in root.children:
+            if child.visits > best_child.visits:
+                best_child = child
+
+        # choose the action of the most visited child
+        return best_child.action
+
+    def select(self, node: Node) -> Node:
+        current_Node = node
+        # Find a leaf node to expand: keep selecting the best child until we find a node that is not fully expanded or is terminal
+        while current_Node.is_fully_expanded() and not current_Node.is_terminal():
+            best_node = current_Node.best_child(self.exploration_constant, self.min_value, self.max_value)
+
+            if best_node is None:
+                break  # No children, return the current leaf node
+            current_Node = best_node
+        return current_Node
+
+    def expand(self, node: Node) -> Node:
+        # Pick an untried action
+        action = node.untried_actions.pop()
+        cloned_env = self.clone_env_state(node.state)
+
+        # Simulate the action in the cloned environment
+        next_state, reward, done, _, _ = cloned_env.step(action)
+        child_node = Node(state=next_state, parent=node, action=action)
+
+        # Initialize the child node's untried actions
+        child_node.untried_actions = list(range(self.env.action_space.n))
+
+        return child_node
+
+    def rollout(self, node: Node) -> float:
+        cloned_env = self.clone_env_state(node.state)
+        # Cumulate rewards until a terminal state is reached or max rollout depth is hit
+        cumulative_reward = 0.0
+        for _ in range(self.max_rollout_depth):
+            action = cloned_env.action_space.sample()
+            _, reward, done, _, _ = cloned_env.step(action)
+            cumulative_reward += reward
+            if done:
+                break
+        return cumulative_reward
+
+    def backpropagate(self, node: Node, reward: float):
+        # Propagate the reward up the tree
+        while node is not None:
+            node.visits += 1
+            node.value += reward
+            node = node.parent
+
+    def get_action_probabilities(self, root: Node):
+        action_probabilities = np.zeros(len(self.env.action_space))
+        total_visits = sum(child.visits for child in root.children)
+        if total_visits == 0:
+            return action_probabilities
+
+        for child in root.children:
+            action_probabilities[child.action] = child.visits / total_visits
+        return action_probabilities
+
+    def clone_env_state(self, state) -> gym.Env:
+        cloned_env: gym.Env = deepcopy(self.env)
+        cloned_env.reset()
+        # overwrites the state to the specific one you want
+        cloned_env.unwrapped.state = state
+        return cloned_env
