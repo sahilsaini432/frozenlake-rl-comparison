@@ -1,0 +1,30 @@
+{
+  "config_name": "config2",
+  "seed": 2,
+  "config": {
+    "label": "Reference-inspired baseline",
+    "learning_rate": 0.001,
+    "gamma": 0.99,
+    "batch_size": 64,
+    "buffer_size": 10000,
+    "target_update_interval": 100,
+    "exploration_initial_eps": 0.5,
+    "exploration_final_eps": 0.01,
+    "exploration_fraction": 0.1,
+    "learning_starts": 100,
+    "train_freq": 4,
+    "gradient_steps": 1,
+    "timesteps": 50000,
+    "net_arch": [
+      128,
+      128
+    ],
+    "is_slippery": true
+  },
+  "metrics": {
+    "eval_mean": 0.748,
+    "eval_std": 0.43416126036301306,
+    "success_rate": 0.748
+  },
+  "final_loss": 0.0007182548870332539
+}

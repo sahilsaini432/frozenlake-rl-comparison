@@ -1,0 +1,9 @@
+{
+  "config_name": "config1",
+  "num_seeds": 3,
+  "success_rate_mean": 0.49733333333333335,
+  "success_rate_std": 0.15371474302168356,
+  "eval_mean_mean": 0.49733333333333335,
+  "eval_mean_std": 0.15371474302168356,
+  "eval_std_mean": 0.475413442748219
+}
