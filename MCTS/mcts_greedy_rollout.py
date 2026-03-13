@@ -148,19 +148,30 @@ class MCTS_GreedyRollout:
         # One-step lookahead using the transition model — no env cloning needed
         # P[state][action] = list of (prob, next_state, reward, done)
         # Randomly break ties so rollouts stay exploratory when all rewards are equal (e.g. reward=0)
+
+        # Compute current and goal (x, y) positions on the grid
         row, col = divmod(state, self.grid_size)
         goal = self.grid_size * self.grid_size - 1
         goal_row, goal_col = divmod(goal, self.grid_size)
 
         scores = []
+        # For each action calculate score
         for action in range(self.sim_env.action_space.n):
             expected_score = 0
+            # Average over all stochastic transitions for this action
             for prob, next_state, reward, done in self.sim_env.unwrapped.P[state][action]:
-                nr, nc = divmod(next_state, self.grid_size)
-                dist = abs(nr - goal_row) + abs(nc - goal_col)
+                next_row, next_col = divmod(next_state, self.grid_size)
+
+                # Negative distance so higher score = closer to goal
+                dist = abs(next_row - goal_row) + abs(next_col - goal_col)
+
+                # Heavy penalty for landing in a hole (done=True, reward=0)
                 hole_penalty = -10 if (done and reward == 0) else 0
+
                 expected_score += prob * (-dist + hole_penalty)
             scores.append(expected_score)
+
+        # Pick uniformly among all actions that tie for the best score
         max_score = max(scores)
         best_actions = [a for a, s in enumerate(scores) if s == max_score]
         return np.random.choice(best_actions)
