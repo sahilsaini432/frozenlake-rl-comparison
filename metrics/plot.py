@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_progress(total_rewards, alg_name):
+def plot_progress(total_rewards, alg_name, args):
     n = len(total_rewards)
     # Set window size to 10% of total episode length, at least 1
     window = max(1, n // 10)
@@ -43,12 +43,14 @@ def plot_progress(total_rewards, alg_name):
     )
 
     plt.tight_layout()
-    filename = path.join("graphs", f"{alg_name}_progress.png")
+    filename = path.join(
+        "graphs", f"{alg_name}_episodes-{args.episodes}_grid-{args.grid}_slip-{args.slip}_progress.png"
+    )
     plt.savefig(filename, dpi=500)
     plt.show()
 
 
-def plot_time_stats(episode_times, steps_per_episode, avg_search_times, alg_name):
+def plot_time_stats(episode_times, steps_per_episode, avg_search_times, alg_name, args):
     n = len(episode_times)
     window = max(1, n // 10)
     episodes = np.arange(1, n + 1)
@@ -88,6 +90,8 @@ def plot_time_stats(episode_times, steps_per_episode, avg_search_times, alg_name
     axes[2].legend(loc="upper right")
 
     plt.tight_layout()
-    filename = path.join("graphs", f"{alg_name}_time_stats.png")
+    filename = path.join(
+        "graphs", f"{alg_name}_episodes-{args.episodes}_grid-{args.grid}_slip-{args.slip}_time_stats.png"
+    )
     plt.savefig(filename, dpi=500)
     plt.show()

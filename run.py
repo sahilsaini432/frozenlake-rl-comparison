@@ -92,7 +92,7 @@ def log(message):
         print(f"{message}")
 
 
-def evaluate_mcts(env, agent, episodes, verbose=False):
+def evaluate_mcts(env, agent, episodes, args):
     """Run MCTS for a fixed number of episodes and report success rate and avg reward."""
     total_rewards = []
     episode_times = []
@@ -137,14 +137,14 @@ def evaluate_mcts(env, agent, episodes, verbose=False):
     print(f"Avg steps/episode:  {sum(steps_per_episode) / episodes:.1f}")
     print(f"Avg search time:    {sum(avg_search_times) / episodes * 1000:.1f}ms/step")
     alg_name = type(agent).__name__
-    plot_progress(total_rewards, alg_name)
-    plot_time_stats(episode_times, steps_per_episode, avg_search_times, alg_name)
+    plot_progress(total_rewards, alg_name, args)
+    plot_time_stats(episode_times, steps_per_episode, avg_search_times, alg_name, args)
     return total_rewards
 
 
-def train_agent(env, agent, episodes):
+def train_agent(env, agent, episodes, args):
     if isinstance(agent, (MCTSBase, MCTS_UCB1, MCTS_GreedyRollout)):
-        evaluate_mcts(env, agent, episodes, verbose=verbose)
+        evaluate_mcts(env, agent, episodes, args=args)
     else:
         # Train the agent
         num_episodes = args.episodes
@@ -227,7 +227,7 @@ if __name__ == "__main__":
     agent = selected_agent(args)
 
     # Train the agent
-    train_agent(env, agent, args.episodes)
+    train_agent(env, agent, args.episodes, args)
 
     # Test the agent
     if canTest(args):
