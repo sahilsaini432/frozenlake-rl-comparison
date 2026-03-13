@@ -41,14 +41,10 @@ class Node:
         return score
 
     def best_child(self, exploration_constant, min_value, max_value) -> "Node":
-        max_score = float("-inf")
-        best_child = None
-        for child in self.children:
-            score = child.uct_score(exploration_constant, min_value, max_value)
-            if score > max_score:
-                max_score = score
-                best_child = child
-        return best_child
+        scores = [child.uct_score(exploration_constant, min_value, max_value) for child in self.children]
+        max_score = max(scores)
+        best_children = [child for child, s in zip(self.children, scores) if s == max_score]
+        return np.random.choice(best_children)
 
 
 class MCTSBase:
@@ -89,16 +85,42 @@ class MCTSBase:
                 # For terminal children (goal/hole), use the step reward directly —
                 # rollout from a terminal state won't reproduce the reward that was
                 # given for arriving there (e.g. goal gives reward=1 on arrival only)
-                reward = step_reward if child_node.is_terminal() else step_reward + self.rollout(child_node)
+                reward = (
+                    child_node.terminal_reward
+                    if child_node.is_terminal()
+                    else step_reward + self.rollout(child_node)
+                )
                 self.min_value = min(self.min_value, reward)
                 self.max_value = max(self.max_value, reward)
                 self.backpropagate(child_node, reward)
 
-        # Get best child fro the root
-        best_child = Node(state=None, parent=None, action=None)
-        for child in root.children:
-            if child.visits > best_child.visits:
-                best_child = child
+        # Get best child from the root — random tiebreaking when visits are equal
+        max_visits = max((child.visits for child in root.children), default=0)
+        best_children = [child for child in root.children if child.visits == max_visits]
+        best_child = np.random.choice(best_children)
+
+        if self.verbose:
+            action_names = {0: "LEFT", 1: "DOWN", 2: "RIGHT", 3: "UP"}
+            self.log(f"\n--- Search from state {state} (root visits={root.visits}) ---")
+            for child in sorted(root.children, key=lambda c: c.visits, reverse=True):
+                q = child.value / child.visits if child.visits > 0 else 0.0
+                ucb1 = (
+                    child.uct_score(self.exploration_constant, self.min_value, self.max_value)
+                    if child.visits > 0
+                    else float("inf")
+                )
+                terminal_tag = (
+                    f" [TERMINAL reward={child.terminal_reward:.2f}]" if child.is_terminal() else ""
+                )
+                chosen_tag = " <-- CHOSEN" if child is best_child else ""
+                self.log(
+                    f"  action={action_names.get(child.action, child.action):<5} "
+                    f"-> state={child.state:<4} "
+                    f"visits={child.visits:<6} "
+                    f"Q={q:+.6f}  "
+                    f"UCT={ucb1:+.6f}"
+                    f"{terminal_tag}{chosen_tag}"
+                )
 
         # choose the action of the most visited child
         return best_child.action
@@ -121,19 +143,16 @@ class MCTSBase:
 
         # Simulate the action in the cloned environment
         next_state, step_reward, done, truncated, info = cloned_env.step(action)
-        if step_reward == 1 and done:
-            self.log("Hit a goal during expansion!")
-        elif done:
-            self.log(f"Hit a hole during expansion! State: {next_state}")
         child_node = Node(state=next_state, parent=node, action=action)
 
         # Treat wall hits (same state, not done) as terminal to prevent infinite cycles
         is_wall_hit = next_state == node.state and not done
         child_node.done = done or is_wall_hit
-        # Give wall hits a small negative reward so selection avoids them
-        # instead of treating them as equally attractive as unexplored nodes (Q=0)
-        if is_wall_hit:
-            child_node.terminal_reward = -0.1
+        if is_wall_hit or (done and step_reward == 0):
+            # Wall hits and holes both get -1.0 so the tree avoids them equally.
+            # Without this, holes (reward=0) look better than valid paths (Q slightly
+            # negative from wall hit penalties leaking up the tree).
+            child_node.terminal_reward = -1.0
         else:
             child_node.terminal_reward = step_reward if child_node.done else 0.0
 

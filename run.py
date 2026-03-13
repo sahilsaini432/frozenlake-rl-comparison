@@ -1,6 +1,8 @@
 # Update this file to incorporate any new agent or implementation you create
 
 import argparse
+import os
+from multiprocessing import Pool
 from time import sleep, perf_counter
 import gymnasium as gym
 from stable_baselines3 import A2C
@@ -199,6 +201,7 @@ if __name__ == "__main__":
     parser.add_argument("--mcts_ucb1", action="store_true", help="Use MCTS with UCB1 for selection")
     parser.add_argument("--mcts_greedy", action="store_true", help="Use MCTS with greedy rollout policy")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
+    parser.add_argument("--human", default=False, action="store_true", help="Enable human render")
     parser.add_argument(
         "-g", "--grid", type=int, choices=[4, 8, 16], default=4, help="Grid size for FrozenLake"
     )
@@ -217,7 +220,10 @@ if __name__ == "__main__":
         selected_map = sixteen_x_sixteen_map
 
     # Set up the environment
-    env = gym.make("FrozenLake-v1", desc=selected_map, is_slippery=args.slip, render_mode="human")
+    if args.human:
+        env = gym.make("FrozenLake-v1", desc=selected_map, is_slippery=args.slip, render_mode="human")
+    else:
+        env = gym.make("FrozenLake-v1", desc=selected_map, is_slippery=args.slip)
 
     # Initialize agent
     agent = selected_agent(args)
