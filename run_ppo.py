@@ -265,25 +265,25 @@ def run_single_seed(seed, config, output_dir):
     mode = "stochastic" if is_slippery else "deterministic"
     plot_training_curve(
         timesteps_arr, rewards_arr, window=100,
-        title=f"PPO {mode} (seed={seed}, hidden={hidden_size})",
+        title=f"Baseline Learning Curve (seed={seed})",
         filename=os.path.join(output_dir, f"ppo_training_curve_seed{seed}.png"),
     )
     if callback.entropy_losses:
         plot_entropy_loss(
             callback.training_timesteps, callback.entropy_losses,
-            title=f"Entropy Loss (seed={seed}, hidden={hidden_size})",
+            title=f"Baseline Entropy Loss (seed={seed})",
             filename=os.path.join(output_dir, f"ppo_entropy_loss_seed{seed}.png"),
         )
     if callback.approx_kls:
         plot_approx_kl(
             callback.training_timesteps, callback.approx_kls,
-            title=f"Approx KL (seed={seed}, hidden={hidden_size})",
+            title=f"Baseline PPO Stability Signal (seed={seed})",
             filename=os.path.join(output_dir, f"ppo_approx_kl_seed{seed}.png"),
         )
-    if len(callback.episode_lengths) >= 50:
+    if len(callback.episode_lengths) >= 100:
         plot_episode_length(
-            timesteps_arr, np.array(callback.episode_lengths), window=50,
-            title=f"Episode Length (seed={seed}, hidden={hidden_size})",
+            timesteps_arr, np.array(callback.episode_lengths), window=100,
+            title=f"Baseline Episode Length Curve (seed={seed})",
             filename=os.path.join(output_dir, f"ppo_episode_length_seed{seed}.png"),
         )
     save_summary_table(config, metrics, entropy_loss, seed,
