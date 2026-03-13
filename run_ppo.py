@@ -231,7 +231,7 @@ def run_single_seed(seed, config, output_dir):
     model = ModPPO(
         policy="MlpPolicy",
         env=DummyVecEnv([env_fn]),
-        learning_rate=3e-4,
+        learning_rate=config["lr"],
         n_steps=config["n_steps"],
         batch_size=64,
         n_epochs=10,
@@ -306,6 +306,7 @@ def main():
     parser.add_argument("--timesteps", type=int, default=100000)
     parser.add_argument("--hidden_size", type=int, default=64)
     parser.add_argument("--n_steps", type=int, default=2048)
+    parser.add_argument("--lr", type=float, default=3e-4)
     parser.add_argument("--deterministic", action="store_true")
     parser.add_argument("--seeds", type=int, nargs="+", default=[1, 2, 3])
     parser.add_argument("--n_eval", type=int, default=1000)
@@ -318,6 +319,7 @@ def main():
         "is_slippery": is_slippery,
         "hidden_size": args.hidden_size,
         "n_steps": args.n_steps,
+        "lr": args.lr,
         "timesteps": args.timesteps,
         "n_eval": args.n_eval,
         "ent_coef": args.ent_coef,
@@ -331,6 +333,7 @@ def main():
     print(f"  Slippery:      {is_slippery}")
     print(f"  Hidden size:   {args.hidden_size}")
     print(f"  n_steps:       {args.n_steps}")
+    print(f"  Learning rate: {args.lr}")
     print(f"  Timesteps:     {args.timesteps}")
     print(f"  Seeds:         {args.seeds}")
     print(f"  Eval episodes: {args.n_eval}")
