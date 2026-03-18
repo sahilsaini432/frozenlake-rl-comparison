@@ -1,6 +1,6 @@
 from copy import deepcopy
 import gymnasium as gym
-from MCTS.helper.node import Node
+from helper.node import Node
 
 
 class StandardExpansion:

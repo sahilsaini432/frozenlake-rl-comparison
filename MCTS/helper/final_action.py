@@ -1,5 +1,5 @@
 import numpy as np
-from MCTS.helper.node import Node
+from helper.node import Node
 
 
 class RobustChild:

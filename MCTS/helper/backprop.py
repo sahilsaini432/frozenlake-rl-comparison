@@ -1,4 +1,4 @@
-from MCTS.helper.node import Node
+from helper.node import Node
 
 
 class StandardBackprop:

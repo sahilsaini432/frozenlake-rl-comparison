@@ -99,7 +99,25 @@ def plot_time_stats(episode_times, steps_per_episode, avg_search_times, args):
     axes[2].set_title("Avg Search Time per Step")
     axes[2].legend(loc="upper right")
 
-    plt.tight_layout()
+    avg_episode_time = np.mean(episode_times)
+    avg_steps = np.mean(steps_per_episode)
+    avg_search_time = np.mean(search_times_ms)
+    stats = (
+        f"Avg episode time: {avg_episode_time:.2f}s\n"
+        f"Avg steps/episode: {avg_steps:.1f}\n"
+        f"Avg search time: {avg_search_time:.1f}ms/step"
+    )
+    fig.text(
+        0.98,
+        0.02,
+        stats,
+        fontsize=9,
+        verticalalignment="bottom",
+        horizontalalignment="right",
+        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+    )
+
+    plt.tight_layout(rect=[0, 0.06, 1, 1])
     filename = path.join(
         "graphs",
         f"sel-{args.selection}_roll-{args.rollout}_final-{args.final_action}_"

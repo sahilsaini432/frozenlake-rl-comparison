@@ -1,95 +1,87 @@
 # Plug-and-play MCTS runner — select different strategies via CLI flags
 
 import argparse
+import json
+from os import path
 from time import perf_counter
 import gymnasium as gym
 from tqdm import tqdm
 
 from mcts import MCTS
-from helper.selection_strategy import UCTStrategy, UCB1Strategy, PUCTStrategy_Uniform
+from helper.selection_strategy import UCTStrategy, UCB1Strategy, PUCTStrategy_Heuristic, PUCTStrategy_Uniform
 from helper.rollout import RandomRollout, EpsilonGreedyRollout
 from helper.expansion import StandardExpansion
 from helper.backprop import StandardBackprop
 from helper.final_action import RobustChild, MaxValue
 from metrics.plot import plot_progress, plot_time_stats
 
-four_x_four_map = [
-    "SFFF",
-    "FHFH",
-    "FFFH",
-    "HFFG",
-]
+# Load generated maps from maps.json (run helper/map_generator.py to regenerate)
+_maps_file = path.join(path.dirname(__file__), "maps.json")
+with open(_maps_file) as _f:
+    _generated_maps = json.load(_f)
 
-eight_x_eight_map = [
-    "SFHFFFHF",
-    "FFFHFFFH",
-    "HFFFHFHF",
-    "FFHFFHFF",
-    "FHFFFFHF",
-    "FFFHFFFH",
-    "HFHFFHFF",
-    "FFFHFFHG",
-]
-
-sixteen_x_sixteen_map = [
-    "SFFHFFFHFFFHFFFF",
-    "FHFFFHFFHFFHFFHF",
-    "FFHFFFFFHFFHFFFF",
-    "HFFFHFFHFFFHFHFF",
-    "FFFHFFFHFHFFHFFF",
-    "FHFFHFFFHFFFHFHF",
-    "FFFHFFFFHFHFFHFF",
-    "HFFFHFHFFFHFFFHF",
-    "FFHFFFHFHFFFHFFF",
-    "FHFFHFFFHFHFFHFF",
-    "FFFHFFFHFFHFHFFF",
-    "HFHFFFHFHFFFHFFH",
-    "FFFHFHFFFHFFHFFF",
-    "FHFFFHFFHFHFFFHF",
-    "FFHFHFFFHFFFHFFF",
-    "HFFFHFHFFFHFFHFG",
-]
+MAPS = {
+    4: _generated_maps["4"],
+    8: _generated_maps["8"],
+    16: _generated_maps["16"],
+    32: _generated_maps["32"],
+    64: _generated_maps["64"],
+}
 
 verbose = False
 
 # --- Strategy factory maps ---
 
-SELECTION_STRATEGIES = {
-    "uct": lambda c: UCTStrategy(c),
-    "ucb1": lambda c: UCB1Strategy(c),
-    "puct_uniform": lambda c: PUCTStrategy_Uniform(c),
-}
+SELECTION_CHOICES = ["uct", "ucb1", "puct_uniform", "puct_heuristic"]
+ROLLOUT_CHOICES = ["random", "epsilon_greedy"]
+FINAL_ACTION_CHOICES = ["robust_child", "max_value"]
 
-ROLLOUT_POLICIES = {
-    "random": lambda sim_env, depth, env: RandomRollout(sim_env, depth),
-    "epsilon_greedy": lambda sim_env, depth, env: EpsilonGreedyRollout(
-        sim_env, depth, env.unwrapped.nrow, epsilon=0.1
-    ),
-}
 
-FINAL_ACTION_STRATEGIES = {
-    "robust_child": RobustChild,
-    "max_value": MaxValue,
-}
+def build_selection(name, exploration_constant, grid_size):
+    if name == "uct":
+        return UCTStrategy(exploration_constant)
+    if name == "ucb1":
+        return UCB1Strategy(exploration_constant)
+    if name == "puct_uniform":
+        return PUCTStrategy_Uniform(exploration_constant)
+    if name == "puct_heuristic":
+        return PUCTStrategy_Heuristic(exploration_constant, grid_size)
+    raise ValueError(f"Unknown selection strategy: {name}")
+
+
+def build_rollout(name, sim_env, depth, env):
+    if name == "random":
+        return RandomRollout(sim_env, depth)
+    if name == "epsilon_greedy":
+        return EpsilonGreedyRollout(sim_env, depth, env.unwrapped.nrow, epsilon=0.1)
+    raise ValueError(f"Unknown rollout policy: {name}")
+
+
+def build_final_action(name):
+    if name == "robust_child":
+        return RobustChild()
+    if name == "max_value":
+        return MaxValue()
+    raise ValueError(f"Unknown final action strategy: {name}")
 
 
 def build_agent(env, args):
-    sim_count = {4: 1000, 8: 3000, 16: 8000}[args.grid]
-    rollout_depth = {4: 100, 8: 200, 16: 400}[args.grid]
+    sim_count = {4: 1000, 8: 3000, 16: 8000, 32: 15000, 64: 30000}[args.grid]
+    rollout_depth = {4: 100, 8: 200, 16: 400, 32: 800, 64: 1600}[args.grid]
 
     # Build a headless sim env for components that need it
     sim_kwargs = {k: v for k, v in env.unwrapped.spec.kwargs.items() if k != "render_mode"}
     sim_env = gym.make(env.unwrapped.spec.id, **sim_kwargs)
 
-    selection = SELECTION_STRATEGIES[args.selection](args.exploration_constant)
+    selection = build_selection(args.selection, args.exploration_constant, args.grid)
 
     # PUCT needs a prior on each node; uniform = 1/num_actions
     prior = (1.0 / sim_env.action_space.n) if args.selection == "puct_uniform" else 0.0
     expansion = StandardExpansion(sim_env, prior=prior)
 
-    rollout = ROLLOUT_POLICIES[args.rollout](sim_env, rollout_depth, env)
+    rollout = build_rollout(args.rollout, sim_env, rollout_depth, env)
     backprop = StandardBackprop()
-    final_action = FINAL_ACTION_STRATEGIES[args.final_action]()
+    final_action = build_final_action(args.final_action)
 
     return MCTS(
         env=env,
@@ -168,19 +160,19 @@ if __name__ == "__main__":
     # Strategy selection
     parser.add_argument(
         "--selection",
-        choices=list(SELECTION_STRATEGIES.keys()),
+        choices=SELECTION_CHOICES,
         default="uct",
         help="Selection strategy (default: uct)",
     )
     parser.add_argument(
         "--rollout",
-        choices=list(ROLLOUT_POLICIES.keys()),
+        choices=ROLLOUT_CHOICES,
         default="random",
         help="Rollout policy (default: random)",
     )
     parser.add_argument(
         "--final_action",
-        choices=list(FINAL_ACTION_STRATEGIES.keys()),
+        choices=FINAL_ACTION_CHOICES,
         default="robust_child",
         help="Final action selection (default: robust_child)",
     )
@@ -192,7 +184,7 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument("--human", action="store_true", default=False, help="Enable human render")
     parser.add_argument(
-        "-g", "--grid", type=int, choices=[4, 8, 16], default=4, help="Grid size for FrozenLake"
+        "-g", "--grid", type=int, choices=[4, 8, 16, 32, 64], default=4, help="Grid size for FrozenLake"
     )
     parser.add_argument(
         "-s", "--slip", action="store_true", default=False, help="Use slippery version of FrozenLake"
@@ -200,13 +192,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     verbose = args.verbose
 
-    # Select the map based on the grid size argument
-    if args.grid == 4:
-        selected_map = four_x_four_map
-    elif args.grid == 8:
-        selected_map = eight_x_eight_map
-    else:
-        selected_map = sixteen_x_sixteen_map
+    selected_map = MAPS[args.grid]
 
     # Set up the environment
     if args.human:

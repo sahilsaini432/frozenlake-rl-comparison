@@ -1,6 +1,6 @@
 import gymnasium as gym
 import numpy as np
-from MCTS.helper.node import Node
+from helper.node import Node
 
 
 class MCTS:
