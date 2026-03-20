@@ -17,7 +17,7 @@ from helper.selection_strategy import (
     PUCTStrategy_Uniform,
 )
 from helper.rollout import RandomRollout, EpsilonGreedyRollout, ValueNetworkRollout
-from MCTS.helper.value_function import ValueMLP, make_heuristic_value_fn
+from helper.value_function import ValueMLP, ValueFunctionOnly, HeuristicValueFunction
 from helper.expansion import StandardExpansion
 from helper.backprop import StandardBackprop
 from helper.final_action import RobustChild, MaxValue
@@ -26,6 +26,7 @@ from metrics.plot import plot_progress, plot_time_stats
 GAMMA = 0.99  # Discount factor for value iteration and rollout blending
 EPOCHS = 1000  # Training epochs for value network
 LEARNING_RATE = 1e-3  # Learning rate for value network training
+LAMBDA = 0.5  # Blending factor for value network in rollout (0 = pure rollout, 1 = pure value fn)
 
 # Load generated maps from maps.json (run helper/map_generator.py to regenerate)
 _maps_file = path.join(path.dirname(__file__), "maps.json")
@@ -45,7 +46,7 @@ verbose = False
 # --- Strategy factory maps ---
 
 SELECTION_CHOICES = ["uct", "ucb1", "puct_uniform", "puct_heuristic", "puct_softmax"]
-ROLLOUT_CHOICES = ["random", "epsilon_greedy", "value_network", "mlp_value_network"]
+ROLLOUT_CHOICES = ["random", "epsilon_greedy", "value_network", "mlp_value_network", "alphazero"]
 FINAL_ACTION_CHOICES = ["robust_child", "max_value"]
 
 
@@ -70,8 +71,8 @@ def build_rollout(name, sim_env, depth, env, grid_size):
         return EpsilonGreedyRollout(sim_env, depth, grid_size, epsilon=0.1)
     if name == "value_network":
         base_rollout = RandomRollout(sim_env, depth)
-        value_fn = make_heuristic_value_fn(grid_size)
-        return ValueNetworkRollout(value_fn, base_rollout, lam=0.5)
+        value_fn = HeuristicValueFunction(grid_size)
+        return ValueNetworkRollout(value_fn, base_rollout, lam=LAMBDA)
     if name == "mlp_value_network":
         print(f"Running value iteration + training MLP for {grid_size}x{grid_size} grid...")
         base_rollout = RandomRollout(sim_env, depth)
@@ -79,7 +80,16 @@ def build_rollout(name, sim_env, depth, env, grid_size):
         value_fn, _ = mlp.train_value_network(
             env, grid_size, gamma=GAMMA, epochs=EPOCHS, lr=LEARNING_RATE, verbose=True
         )
-        return ValueNetworkRollout(value_fn, base_rollout, lam=0.5)
+        return ValueNetworkRollout(value_fn, base_rollout, lam=LAMBDA)
+    if name == "alphazero":
+        print(
+            f"Running value iteration + training MLP (AlphaZero-style, no rollout) for {grid_size}x{grid_size} grid..."
+        )
+        mlp = ValueMLP(hidden_size=64)
+        value_fn, _ = mlp.train_value_network(
+            env, grid_size, gamma=GAMMA, epochs=EPOCHS, lr=LEARNING_RATE, verbose=True
+        )
+        return ValueFunctionOnly(value_fn)
     raise ValueError(f"Unknown rollout policy: {name}")
 
 

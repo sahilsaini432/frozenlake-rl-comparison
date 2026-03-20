@@ -4,23 +4,32 @@ import torch.nn as nn
 import torch.optim as optim
 
 
-def make_heuristic_value_fn(grid_size):
-    """
-    V(s) = -(Manhattan distance to goal) / max_possible_distance, in [-1, 0].
-    Terminal goal state gets 1.0; all other states are negative proportional to distance.
-    """
-    goal = grid_size * grid_size - 1
-    goal_row, goal_col = divmod(goal, grid_size)
-    max_dist = (grid_size - 1) + (grid_size - 1)
+class HeuristicValueFunction:
+    """Callable wrapper for the heuristic value function."""
 
-    def value_fn(state: int) -> float:
-        if state == goal:
-            return 1.0
-        row, col = divmod(state, grid_size)
-        dist = abs(row - goal_row) + abs(col - goal_col)
-        return -dist / max_dist
+    def __init__(self, grid_size):
+        self.value_fn = self.make_heuristic_value_fn(grid_size)
 
-    return value_fn
+    def __call__(self, node) -> float:
+        return self.value_fn(node.state)
+
+    def make_heuristic_value_fn(grid_size):
+        """
+        V(s) = -(Manhattan distance to goal) / max_possible_distance, in [-1, 0].
+        Terminal goal state gets 1.0; all other states are negative proportional to distance.
+        """
+        goal = grid_size * grid_size - 1
+        goal_row, goal_col = divmod(goal, grid_size)
+        max_dist = (grid_size - 1) + (grid_size - 1)
+
+        def value_fn(state: int) -> float:
+            if state == goal:
+                return 1.0
+            row, col = divmod(state, grid_size)
+            dist = abs(row - goal_row) + abs(col - goal_col)
+            return -dist / max_dist
+
+        return value_fn
 
 
 class ValueMLP(nn.Module):
@@ -119,3 +128,16 @@ class ValueMLP(nn.Module):
                 return model(feats.unsqueeze(0)).item()
 
         return value_fn, model
+
+
+class ValueFunctionOnly:
+    """
+    Replaces the rollout policy entirely. The value_fn can be the heuristic
+    or the trained MLP from train_value_network().
+    """
+
+    def __init__(self, value_fn):
+        self.value_fn = value_fn
+
+    def __call__(self, node) -> float:
+        return self.value_fn(node.state)
