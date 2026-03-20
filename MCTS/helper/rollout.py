@@ -27,6 +27,26 @@ class RandomRollout:
         return cloned_env
 
 
+class ValueNetworkRollout:
+    """Blends a value function V(s) with a rollout estimate.
+
+    leaf_value = lam * V(child_state) + (1 - lam) * rollout_reward
+
+    `value_fn` is any callable: state (int) -> float.
+    Set lam=1.0 to use the value function only; lam=0.0 for pure rollout.
+    """
+
+    def __init__(self, value_fn, rollout_policy, lam=0.5):
+        self.value_fn = value_fn
+        self.rollout_policy = rollout_policy
+        self.lam = lam
+
+    def __call__(self, node) -> float:
+        v = self.value_fn(node.state)
+        r = self.rollout_policy(node)
+        return self.lam * r + (1.0 - self.lam) * v
+
+
 class EpsilonGreedyRollout:
     """Epsilon-greedy rollout — with probability epsilon take a random action,
     otherwise take greedy action (minimize Manhattan distance to goal with hole penalty)."""
