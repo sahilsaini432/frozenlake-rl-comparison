@@ -18,8 +18,8 @@ from helper.selection_strategy import (
 )
 from helper.rollout import RandomRollout, EpsilonGreedyRollout, ValueNetworkRollout
 from helper.value_function import ValueMLP, ValueFunctionOnly, HeuristicValueFunction
-from helper.expansion import FullExpansion, StandardExpansion
-from helper.backprop import StandardBackprop
+from helper.expansion import FullExpansion, StandardExpansion, ProgressiveWideningExpansion
+from helper.backprop import StandardBackprop, MaxBackprop
 from helper.final_action import RobustChild, MaxValue
 from metrics.plot import plot_progress, plot_time_stats
 
@@ -27,6 +27,7 @@ GAMMA = 0.99  # Discount factor for value iteration and rollout blending
 EPOCHS = 1000  # Training epochs for value network
 LEARNING_RATE = 1e-3  # Learning rate for value network training
 LAMBDA = 0.5  # Blending factor for value network in rollout (0 = pure rollout, 1 = pure value fn)
+ALPHA = 0.5  # Alpha for progressive widening (not used in this code but can be set when building the expansion strategy)
 
 # Load generated maps from maps.json (run helper/map_generator.py to regenerate)
 _maps_file = path.join(path.dirname(__file__), "maps.json")
@@ -48,7 +49,8 @@ verbose = False
 SELECTION_CHOICES = ["uct", "ucb1", "puct_uniform", "puct_heuristic", "puct_softmax"]
 ROLLOUT_CHOICES = ["random", "epsilon_greedy", "value_network", "mlp_value_network", "alphazero"]
 FINAL_ACTION_CHOICES = ["robust_child", "max_value"]
-EXPANSION_CHOICES = ["standard", "full"]
+EXPANSION_CHOICES = ["standard", "full", "progressive_widening"]
+BACKPROP_CHOICES = ["standard", "max"]
 
 
 def build_expansion(name, sim_env, prior):
@@ -56,6 +58,8 @@ def build_expansion(name, sim_env, prior):
         return StandardExpansion(sim_env, prior=prior)
     if name == "full":
         return FullExpansion(sim_env, prior=prior)
+    if name == "progressive_widening":
+        return ProgressiveWideningExpansion(sim_env, prior=prior, alpha=ALPHA)
     raise ValueError(f"Unknown expansion strategy: {name}")
 
 
@@ -125,7 +129,7 @@ def build_agent(env, args):
     expansion = build_expansion(args.expansion, sim_env, prior)
 
     rollout = build_rollout(args.rollout, sim_env, rollout_depth, env, args.grid)
-    backprop = StandardBackprop()
+    backprop = MaxBackprop() if args.backprop == "max" else StandardBackprop()
     final_action = build_final_action(args.final_action)
 
     return MCTS(
@@ -220,6 +224,12 @@ if __name__ == "__main__":
         choices=FINAL_ACTION_CHOICES,
         default="robust_child",
         help="Final action selection (default: robust_child)",
+    )
+    parser.add_argument(
+        "--backprop",
+        choices=BACKPROP_CHOICES,
+        default="standard",
+        help="Backpropagation strategy (default: standard)",
     )
     parser.add_argument(
         "-c", "--exploration_constant", type=float, default=1.4, help="Exploration constant C (default: 1.4)"

@@ -45,7 +45,7 @@ class MCTS:
             node = self.select(root)
             if node.is_terminal():
                 self.backpropagate(node, node.terminal_reward)
-            elif not node.is_fully_expanded():
+            elif self.expand.is_expandable(node):
                 for child_node, step_reward in self.expand(node):
                     reward = (
                         child_node.terminal_reward
@@ -80,7 +80,9 @@ class MCTS:
 
     def select(self, node: Node) -> Node:
         current = node
-        while current.is_fully_expanded() and not current.is_terminal():
+        while not self.expand.is_expandable(current) and not current.is_terminal():
+            if not current.children:
+                break
             best = self.strategy.best_child(current)
             if best is None:
                 break
