@@ -46,15 +46,14 @@ class MCTS:
             if node.is_terminal():
                 self.backpropagate(node, node.terminal_reward)
             elif not node.is_fully_expanded():
-                child_node, step_reward = self.expand(node)
-                node.children.append(child_node)
-                reward = (
-                    child_node.terminal_reward
-                    if child_node.is_terminal()
-                    else step_reward + self.rollout_policy(child_node)
-                )
-                self.strategy.update(reward)
-                self.backpropagate(child_node, reward)
+                for child_node, step_reward in self.expand(node):
+                    reward = (
+                        child_node.terminal_reward
+                        if child_node.is_terminal()
+                        else step_reward + self.rollout_policy(child_node)
+                    )
+                    self.strategy.update(reward)
+                    self.backpropagate(child_node, reward)
 
         best_child = self.select_final_action(root)
 

@@ -18,7 +18,7 @@ from helper.selection_strategy import (
 )
 from helper.rollout import RandomRollout, EpsilonGreedyRollout, ValueNetworkRollout
 from helper.value_function import ValueMLP, ValueFunctionOnly, HeuristicValueFunction
-from helper.expansion import StandardExpansion
+from helper.expansion import FullExpansion, StandardExpansion
 from helper.backprop import StandardBackprop
 from helper.final_action import RobustChild, MaxValue
 from metrics.plot import plot_progress, plot_time_stats
@@ -48,6 +48,15 @@ verbose = False
 SELECTION_CHOICES = ["uct", "ucb1", "puct_uniform", "puct_heuristic", "puct_softmax"]
 ROLLOUT_CHOICES = ["random", "epsilon_greedy", "value_network", "mlp_value_network", "alphazero"]
 FINAL_ACTION_CHOICES = ["robust_child", "max_value"]
+EXPANSION_CHOICES = ["standard", "full"]
+
+
+def build_expansion(name, sim_env, prior):
+    if name == "standard":
+        return StandardExpansion(sim_env, prior=prior)
+    if name == "full":
+        return FullExpansion(sim_env, prior=prior)
+    raise ValueError(f"Unknown expansion strategy: {name}")
 
 
 def build_selection(name, exploration_constant, grid_size):
@@ -113,7 +122,7 @@ def build_agent(env, args):
 
     # PUCT needs a prior on each node; uniform = 1/num_actions; softmax sets priors lazily
     prior = (1.0 / sim_env.action_space.n) if args.selection in ("puct_uniform", "puct_softmax") else 0.0
-    expansion = StandardExpansion(sim_env, prior=prior)
+    expansion = build_expansion(args.expansion, sim_env, prior)
 
     rollout = build_rollout(args.rollout, sim_env, rollout_depth, env, args.grid)
     backprop = StandardBackprop()
