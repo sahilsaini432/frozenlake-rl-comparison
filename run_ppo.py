@@ -1,20 +1,5 @@
 """
 run_ppo.py - Train and evaluate PPO baseline on FrozenLake-v1
-
-Baseline definition:
-  - FrozenLake-v1, standard 4x4 map, is_slippery=True (default 1/3 slip)
-  - One-hot encoded state input
-  - MlpPolicy with [64, 64] hidden layers
-  - All SB3 PPO default hyperparameters
-  - 100,000 training timesteps
-  - Deterministic evaluation over 1000 episodes
-  - 3 seeds for stochastic, 1 for deterministic
-
-Usage:
-  python run_ppo.py                                    # 3-seed stochastic baseline
-  python run_ppo.py --seeds 1 2 3                      # explicit seeds
-  python run_ppo.py --deterministic --seeds 1           # deterministic mode
-  python run_ppo.py --hidden_size 16                   # vary architecture
 """
 
 import argparse
@@ -34,8 +19,6 @@ from stable_baselines3.common.monitor import Monitor
 from PPO.base_PPO import ModPPO
 
 
-# One-hot encoding is required for FrozenLake because raw integer
-# states (0-15) imply false numeric ordering
 class OneHotWrapper(gym.ObservationWrapper):
 
     def __init__(self, env):
@@ -51,7 +34,6 @@ class OneHotWrapper(gym.ObservationWrapper):
         return one_hot
 
 
-# Callback to record episode rewards and entropy loss during training
 class TrainingLoggerCallback(BaseCallback):
 
     def __init__(self, verbose=0):
@@ -82,7 +64,6 @@ class TrainingLoggerCallback(BaseCallback):
             pass
 
 
-# Environment factory - supports standard map_name or custom desc from maps.json
 def make_frozenlake_env(is_slippery=True, custom_map=None):
     def _init():
         if custom_map is not None:
@@ -95,7 +76,6 @@ def make_frozenlake_env(is_slippery=True, custom_map=None):
     return _init
 
 
-# Evaluation
 def evaluate_agent(model, env_fn, n_episodes=1000):
     eval_env = env_fn()
     rewards = []
@@ -113,7 +93,6 @@ def evaluate_agent(model, env_fn, n_episodes=1000):
     return rewards
 
 
-# Metrics
 def compute_metrics(eval_rewards):
     metrics = {}
     metrics["eval_mean"] = np.mean(eval_rewards)
@@ -122,7 +101,6 @@ def compute_metrics(eval_rewards):
     return metrics
 
 
-# Plotting
 def plot_training_curve(timesteps, rewards, window, title, filename):
     fig, ax = plt.subplots(figsize=(10, 5))
     if len(rewards) >= window:
@@ -233,6 +211,7 @@ def save_aggregate_summary_table(config, all_metrics, all_entropies, seeds, run_
         ["Network", f"MLP [{config['hidden_size']}, {config['hidden_size']}]"],
         ["Learning Rate", f"{config['lr']}"],
         ["Entropy Coef", f"{config['ent_coef']}"],
+        ["Clip Range", f"{config['clip_range']}"],
         ["Total Timesteps", f"{config['timesteps']:,}"],
         ["Seeds", f"{seeds}"],
         ["Agg Success Rate", f"{np.mean(success_rates):.1%} +/- {np.std(success_rates):.1%}"],
@@ -283,7 +262,7 @@ def run_single_seed(seed, config, output_dir):
         n_epochs=10,
         gamma=0.99,
         gae_lambda=0.95,
-        clip_range=0.2,
+        clip_range=config.get("clip_range", 0.2),
         clip_range_vf=None,
         ent_coef=config.get("ent_coef", 0.0),
         vf_coef=0.5,
@@ -308,7 +287,6 @@ def run_single_seed(seed, config, output_dir):
     metrics = compute_metrics(eval_rewards)
     entropy_loss = callback.entropy_losses[-1] if callback.entropy_losses else float("nan")
 
-    mode = "stochastic" if is_slippery else "deterministic"
     plot_training_curve(
         timesteps_arr, rewards_arr, window=100,
         title=f"Baseline Learning Curve (seed={seed})",
@@ -357,6 +335,8 @@ def main():
     parser.add_argument("--seeds", type=int, nargs="+", default=[1, 2, 3])
     parser.add_argument("--n_eval", type=int, default=1000)
     parser.add_argument("--ent_coef", type=float, default=0.0)
+    parser.add_argument("--clip_range", type=float, default=0.2,
+                        help="PPO clip range (default 0.2)")
     parser.add_argument("--map_size", type=int, default=4,
                         help="Map size to use: 4, 8, 16, 32, 64. Loads from maps/maps.json.")
     parser.add_argument("--output_dir", type=str, default=None,
@@ -394,6 +374,7 @@ def main():
         "timesteps": args.timesteps,
         "n_eval": args.n_eval,
         "ent_coef": args.ent_coef,
+        "clip_range": args.clip_range,
         "custom_map": custom_map,
         "map_size": args.map_size,
     }
@@ -408,6 +389,7 @@ def main():
     print(f"  Hidden size:   {args.hidden_size}")
     print(f"  n_steps:       {args.n_steps}")
     print(f"  Learning rate: {args.lr}")
+    print(f"  Clip range:    {args.clip_range}")
     print(f"  Timesteps:     {args.timesteps}")
     print(f"  Seeds:         {args.seeds}")
     print(f"  Eval episodes: {args.n_eval}")
