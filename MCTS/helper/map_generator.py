@@ -1,5 +1,7 @@
 """Standalone FrozenLake map generator.
 
+AI Generated script to create custom FrozenLake maps with multiple paths and moderate hole density.
+
 Run this script directly to generate maps and save them to maps.json:
     python helper/map_generator.py
 

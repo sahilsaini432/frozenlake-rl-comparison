@@ -10,10 +10,10 @@ class HeuristicValueFunction:
     def __init__(self, grid_size):
         self.value_fn = self.make_heuristic_value_fn(grid_size)
 
-    def __call__(self, node) -> float:
-        return self.value_fn(node.state)
+    def __call__(self, state) -> float:
+        return self.value_fn(state)
 
-    def make_heuristic_value_fn(grid_size):
+    def make_heuristic_value_fn(self, grid_size):
         """
         V(s) = -(Manhattan distance to goal) / max_possible_distance, in [-1, 0].
         Terminal goal state gets 1.0; all other states are negative proportional to distance.

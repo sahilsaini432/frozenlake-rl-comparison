@@ -28,13 +28,7 @@ class RandomRollout:
 
 
 class ValueNetworkRollout:
-    """Blends a value function V(s) with a rollout estimate.
-
-    leaf_value = lam * V(child_state) + (1 - lam) * rollout_reward
-
-    `value_fn` is any callable: state (int) -> float.
-    Set lam=1.0 to use the value function only; lam=0.0 for pure rollout.
-    """
+    """Blends a value function V(s) with a rollout estimate."""
 
     def __init__(self, value_fn, rollout_policy, lam=0.5):
         self.value_fn = value_fn

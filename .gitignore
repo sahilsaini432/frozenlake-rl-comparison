@@ -12,8 +12,10 @@ build/
 develop-eggs/
 dist/
 downloads/
+run_batch.py
 eggs/
 .eggs/
+runs/
 lib/
 lib64/
 parts/
@@ -43,6 +45,8 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+plot_comparison.py
+replay_path.py
 nosetests.xml
 coverage.xml
 *.cover

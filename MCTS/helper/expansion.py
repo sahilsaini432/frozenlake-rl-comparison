@@ -6,12 +6,7 @@ from helper.node import Node
 
 
 class FullExpansion:
-    """Expand all children at once on the first visit to a node.
-    On the first call, every untried action is simulated and all child nodes
-    are added to node.children simultaneously. One child (the last created) is
-    returned for rollout/value evaluation. Subsequent calls won't happen because
-    the node is immediately fully expanded.
-    """
+    """Expand all children at once on the first visit to a node."""
 
     def __init__(self, sim_env: gym.Env, prior=0.0):
         self.sim_env = sim_env
@@ -106,14 +101,11 @@ class ProgressiveWideningExpansion:
         self.alpha = alpha
 
     def _child_limit(self, node: Node) -> int:
-        return max(1, math.ceil(node.visits ** self.alpha))
+        return max(1, math.ceil(node.visits**self.alpha))
 
     def is_expandable(self, node: Node) -> bool:
         """True when visits^alpha allows one more child AND untried actions remain."""
-        return (
-            not node.is_fully_expanded()
-            and len(node.children) < self._child_limit(node)
-        )
+        return not node.is_fully_expanded() and len(node.children) < self._child_limit(node)
 
     def __call__(self, node: Node) -> List[tuple[Node, float]]:
         action = node.untried_actions.pop()

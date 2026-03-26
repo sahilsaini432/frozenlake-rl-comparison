@@ -4,6 +4,7 @@ import argparse
 from calendar import EPOCH
 import json
 from os import path
+from datetime import datetime
 from time import perf_counter
 import gymnasium as gym
 from tqdm import tqdm
@@ -40,6 +41,7 @@ MAPS = {
     16: _generated_maps["16"],
     32: _generated_maps["32"],
     64: _generated_maps["64"],
+    128: _generated_maps["128"],
 }
 
 verbose = False
@@ -159,13 +161,31 @@ def log(message):
         print(f"{message}")
 
 
+def save_successful_path(actions, grid_size):
+    paths_file = path.join(path.dirname(__file__), "paths.json")
+    existing = {}
+    if path.exists(paths_file):
+        with open(paths_file) as f:
+            existing = json.load(f)
+    existing[str(grid_size)] = {
+        "grid": grid_size,
+        "actions": actions,
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+    }
+    with open(paths_file, "w") as f:
+        json.dump(existing, f, indent=2)
+    print(f"  Saved successful path ({len(actions)} steps) to paths.json (grid={grid_size})")
+
+
 def evaluate_mcts(env, agent, episodes, args):
     """Run MCTS for a fixed number of episodes and report success rate and avg reward."""
     total_rewards = []
     episode_times = []
     steps_per_episode = []
     avg_search_times = []
+    outcomes = []  # "success", "hole", or "timeout" per episode
     successes = 0
+    saved_path = False  # only save the first successful path
 
     for episode in tqdm(range(episodes), desc="Evaluating MCTS"):
         obs, info = env.reset()
@@ -173,6 +193,9 @@ def evaluate_mcts(env, agent, episodes, args):
         done = False
         steps = 0
         episode_search_time = 0.0
+        terminated = False
+        truncated = False
+        episode_actions = []
 
         log(f"--- Starting episode {episode + 1} ---")
         episode_start = perf_counter()
@@ -183,6 +206,7 @@ def evaluate_mcts(env, agent, episodes, args):
 
             log(f"Taking action: {action} at state: {obs}")
             obs, reward, terminated, truncated, info = env.step(action)
+            episode_actions.append(int(action))
             episode_reward += reward
             steps += 1
             if terminated:
@@ -195,6 +219,14 @@ def evaluate_mcts(env, agent, episodes, args):
         avg_search_times.append(episode_search_time / steps if steps > 0 else 0.0)
         if episode_reward > 0:
             successes += 1
+            outcomes.append("success")
+            if not saved_path:
+                save_successful_path(episode_actions, args.grid)
+                saved_path = True
+        elif truncated:
+            outcomes.append("timeout")
+        else:
+            outcomes.append("hole")
 
     print(f"\n=== MCTS Evaluation over {episodes} episodes ===")
     print(f"Selection:          {args.selection}")
@@ -207,9 +239,87 @@ def evaluate_mcts(env, agent, episodes, args):
     print(f"Avg episode time:   {sum(episode_times) / episodes:.2f}s")
     print(f"Avg steps/episode:  {sum(steps_per_episode) / episodes:.1f}")
     print(f"Avg search time:    {sum(avg_search_times) / episodes * 1000:.1f}ms/step")
-    plot_progress(total_rewards, args)
+    plot_progress(total_rewards, outcomes, args)
     plot_time_stats(episode_times, steps_per_episode, avg_search_times, args)
+
+    results = {
+        "selection": args.selection,
+        "rollout": args.rollout,
+        "final_action": args.final_action,
+        "backprop": args.backprop,
+        "expansion": args.expansion,
+        "C": args.exploration_constant,
+        "grid": args.grid,
+        "slip": args.slip,
+        "episodes": episodes,
+        "success_rate": round(successes / episodes * 100, 2),
+        "avg_reward": round(sum(total_rewards) / episodes, 6),
+        "min_reward": round(min(total_rewards), 6),
+        "max_reward": round(max(total_rewards), 6),
+        "avg_episode_time": round(sum(episode_times) / episodes, 4),
+        "avg_steps": round(sum(steps_per_episode) / episodes, 2),
+        "avg_search_time_ms": round(sum(avg_search_times) / episodes * 1000, 4),
+    }
+    save_results(results)
     return total_rewards
+
+
+CONFIG_KEYS = (
+    "selection",
+    "rollout",
+    "final_action",
+    "backprop",
+    "expansion",
+    "C",
+    "grid",
+    "slip",
+    "episodes",
+)
+METRIC_KEYS = (
+    "success_rate",
+    "avg_reward",
+    "min_reward",
+    "max_reward",
+    "avg_episode_time",
+    "avg_steps",
+    "avg_search_time_ms",
+)
+
+
+def config_key(entry):
+    return tuple(entry[k] for k in CONFIG_KEYS)
+
+
+def save_results(new_entry):
+    result_path = path.join(path.dirname(__file__), "results.jsonl")
+    existing = []
+    if path.exists(result_path):
+        with open(result_path) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    existing.append(json.loads(line))
+
+    target_key = config_key(new_entry)
+    merged = False
+    for entry in existing:
+        if config_key(entry) == target_key:
+            runs = entry.get("runs", 1)
+            for m in METRIC_KEYS:
+                entry[m] = round((entry[m] * runs + new_entry[m]) / (runs + 1), 6)
+            entry["runs"] = runs + 1
+            entry["timestamp"] = datetime.now().isoformat(timespec="seconds")
+            merged = True
+            break
+
+    if not merged:
+        new_entry["runs"] = 1
+        new_entry["timestamp"] = datetime.now().isoformat(timespec="seconds")
+        existing.append(new_entry)
+
+    with open(result_path, "w") as f:
+        for entry in existing:
+            f.write(json.dumps(entry) + "\n")
 
 
 if __name__ == "__main__":
@@ -242,6 +352,12 @@ if __name__ == "__main__":
         help="Backpropagation strategy (default: standard)",
     )
     parser.add_argument(
+        "--expansion",
+        choices=EXPANSION_CHOICES,
+        default="standard",
+        help="Expansion strategy (default: standard)",
+    )
+    parser.add_argument(
         "-c", "--exploration_constant", type=float, default=1.4, help="Exploration constant C (default: 1.4)"
     )
 
@@ -249,7 +365,7 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument("--human", action="store_true", default=False, help="Enable human render")
     parser.add_argument(
-        "-g", "--grid", type=int, choices=[4, 8, 16, 32, 64], default=4, help="Grid size for FrozenLake"
+        "-g", "--grid", type=int, choices=[4, 8, 16, 32, 64, 128], default=4, help="Grid size for FrozenLake"
     )
     parser.add_argument(
         "-s", "--slip", action="store_true", default=False, help="Use slippery version of FrozenLake"
