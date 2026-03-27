@@ -51,6 +51,51 @@ class OneHotWrapper(gym.ObservationWrapper):
         return one_hot
 
 
+# Reward shaping wrapper - applied during training only, not evaluation
+# Step penalty: small negative reward per non-terminal step discourages wandering
+# Manhattan distance: potential-based shaping guides agent toward goal
+# Potential-based shaping F(s,s') = gamma*phi(s') - phi(s) preserves optimal policy
+# (Ng et al., 1999). phi(s) = -manhattan_distance(s, goal)
+class RewardShapingWrapper(gym.Wrapper):
+
+    def __init__(self, env, map_size=8, step_penalty=0.0, manhattan_scale=0.0, gamma=0.99):
+        super().__init__(env)
+        self.map_size = map_size
+        self.step_penalty = step_penalty
+        self.manhattan_scale = manhattan_scale
+        self.gamma = gamma
+        self.goal_row = map_size - 1
+        self.goal_col = map_size - 1
+        self._current_state = 0
+
+    def _get_row_col(self, state):
+        return state // self.map_size, state % self.map_size
+
+    def _manhattan_potential(self, state):
+        row, col = self._get_row_col(state)
+        return -(abs(row - self.goal_row) + abs(col - self.goal_col))
+
+    def reset(self, **kwargs):
+        obs, info = self.env.reset(**kwargs)
+        self._current_state = int(np.argmax(obs))
+        return obs, info
+
+    def step(self, action):
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        next_state = int(np.argmax(obs))
+
+        shaping = 0.0
+        if self.step_penalty > 0.0 and not terminated:
+            shaping -= self.step_penalty
+        if self.manhattan_scale > 0.0:
+            phi_s = self._manhattan_potential(self._current_state)
+            phi_s_next = self._manhattan_potential(next_state)
+            shaping += self.manhattan_scale * (self.gamma * phi_s_next - phi_s)
+
+        self._current_state = next_state
+        return obs, reward + shaping, terminated, truncated, info
+
+
 # Callback to record episode rewards and entropy loss during training
 class TrainingLoggerCallback(BaseCallback):
 
@@ -82,20 +127,25 @@ class TrainingLoggerCallback(BaseCallback):
             pass
 
 
-# Environment factory - standard FrozenLake 4x4 map
-def make_frozenlake_env(is_slippery=True, custom_map=None):
+# Environment factory - supports reward shaping during training
+def make_frozenlake_env(is_slippery=True, custom_map=None, map_size=8,
+                        step_penalty=0.0, manhattan_scale=0.0):
     def _init():
         if custom_map is not None:
             env = gym.make("FrozenLake-v1", desc=custom_map, is_slippery=is_slippery)
         else:
             env = gym.make("FrozenLake-v1", map_name="4x4", is_slippery=is_slippery)
         env = OneHotWrapper(env)
+        if step_penalty > 0.0 or manhattan_scale > 0.0:
+            env = RewardShapingWrapper(env, map_size=map_size,
+                                       step_penalty=step_penalty,
+                                       manhattan_scale=manhattan_scale)
         env = Monitor(env)
         return env
     return _init
 
 
-# Evaluation
+# Evaluation - always without shaping so success rate reflects true environment
 def evaluate_agent(model, env_fn, n_episodes=1000):
     eval_env = env_fn()
     rewards = []
@@ -234,6 +284,8 @@ def save_aggregate_summary_table(config, all_metrics, all_entropies, seeds, run_
         ["Learning Rate", f"{config['lr']}"],
         ["Entropy Coef", f"{config['ent_coef']}"],
         ["Clip Range", f"{config['clip_range']}"],
+        ["Step Penalty", f"{config.get('step_penalty', 0.0)}"],
+        ["Manhattan Scale", f"{config.get('manhattan_scale', 0.0)}"],
         ["Total Timesteps", f"{config['timesteps']:,}"],
         ["Seeds", f"{seeds}"],
         ["Agg Success Rate", f"{np.mean(success_rates):.1%} +/- {np.std(success_rates):.1%}"],
@@ -273,7 +325,23 @@ def run_single_seed(seed, config, output_dir):
 
     print(f"\n  Seed {seed} | {'stochastic' if is_slippery else 'deterministic'} | hidden={hidden_size}")
 
-    env_fn = make_frozenlake_env(is_slippery=is_slippery, custom_map=config.get("custom_map"))
+    # Training env WITH shaping
+    env_fn = make_frozenlake_env(
+        is_slippery=is_slippery,
+        custom_map=config.get("custom_map"),
+        map_size=config.get("map_size", 8),
+        step_penalty=config.get("step_penalty", 0.0),
+        manhattan_scale=config.get("manhattan_scale", 0.0),
+    )
+
+    # Eval env WITHOUT shaping - success rate reflects true environment
+    eval_env_fn = make_frozenlake_env(
+        is_slippery=is_slippery,
+        custom_map=config.get("custom_map"),
+        map_size=config.get("map_size", 8),
+        step_penalty=0.0,
+        manhattan_scale=0.0,
+    )
 
     model = ModPPO(
         policy="MlpPolicy",
@@ -305,7 +373,7 @@ def run_single_seed(seed, config, output_dir):
     timesteps_arr = np.array(callback.timesteps_at_episode)
     rewards_arr = np.array(callback.episode_rewards)
 
-    eval_rewards = evaluate_agent(model, env_fn, n_episodes=n_eval)
+    eval_rewards = evaluate_agent(model, eval_env_fn, n_episodes=n_eval)
     metrics = compute_metrics(eval_rewards)
     entropy_loss = callback.entropy_losses[-1] if callback.entropy_losses else float("nan")
 
@@ -364,6 +432,10 @@ def main():
                         help="Value loss coefficient (default 0.5). Try 0.25 or 1.0.")
     parser.add_argument("--clip_range", type=float, default=0.2,
                         help="PPO clip range (default 0.2)")
+    parser.add_argument("--step_penalty", type=float, default=0.0,
+                        help="Small negative reward per non-terminal step (e.g. 0.01).")
+    parser.add_argument("--manhattan_scale", type=float, default=0.0,
+                        help="Scale for potential-based Manhattan distance shaping (e.g. 0.01).")
     parser.add_argument("--map_size", type=int, default=4,
                         help="Map size to use: 4, 8, 16, 32, 64. Loads from maps/maps.json.")
     parser.add_argument("--output_dir", type=str, default=None)
@@ -399,6 +471,8 @@ def main():
         "gae_lambda": args.gae_lambda,
         "vf_coef": args.vf_coef,
         "clip_range": args.clip_range,
+        "step_penalty": args.step_penalty,
+        "manhattan_scale": args.manhattan_scale,
         "custom_map": custom_map,
         "map_size": args.map_size,
     }
@@ -408,20 +482,22 @@ def main():
     print("=" * 60)
     print(f"PPO on FrozenLake-v1 ({mode})")
     print("=" * 60)
-    print(f"  Map:           {args.map_size}x{args.map_size} (custom)")
-    print(f"  Slippery:      {is_slippery}")
-    print(f"  Hidden size:   {args.hidden_size}")
-    print(f"  n_steps:       {args.n_steps}")
-    print(f"  Learning rate: {args.lr}")
-    print(f"  Clip range:    {args.clip_range}")
-    print(f"  GAE lambda:    {args.gae_lambda}")
-    print(f"  vf_coef:       {args.vf_coef}")
-    print(f"  Timesteps:     {args.timesteps}")
-    print(f"  Seeds:         {args.seeds}")
-    print(f"  Eval episodes: {args.n_eval}")
-    print(f"  ent_coef:      {args.ent_coef}")
-    print(f"  Run name:      {args.run_name or '(none)'}")
-    print(f"  Output root:   {run_root}")
+    print(f"  Map:             {args.map_size}x{args.map_size} (custom)")
+    print(f"  Slippery:        {is_slippery}")
+    print(f"  Hidden size:     {args.hidden_size}")
+    print(f"  n_steps:         {args.n_steps}")
+    print(f"  Learning rate:   {args.lr}")
+    print(f"  Clip range:      {args.clip_range}")
+    print(f"  GAE lambda:      {args.gae_lambda}")
+    print(f"  vf_coef:         {args.vf_coef}")
+    print(f"  Timesteps:       {args.timesteps}")
+    print(f"  Seeds:           {args.seeds}")
+    print(f"  Eval episodes:   {args.n_eval}")
+    print(f"  ent_coef:        {args.ent_coef}")
+    print(f"  Step penalty:    {args.step_penalty}")
+    print(f"  Manhattan scale: {args.manhattan_scale}")
+    print(f"  Run name:        {args.run_name or '(none)'}")
+    print(f"  Output root:     {run_root}")
     print("=" * 60)
 
     all_metrics = []
