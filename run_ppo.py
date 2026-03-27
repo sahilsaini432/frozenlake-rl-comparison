@@ -1,5 +1,20 @@
 """
 run_ppo.py - Train and evaluate PPO baseline on FrozenLake-v1
+
+Baseline definition:
+  - FrozenLake-v1, standard 4x4 map, is_slippery=True (default 1/3 slip)
+  - One-hot encoded state input
+  - MlpPolicy with [64, 64] hidden layers
+  - All SB3 PPO default hyperparameters
+  - 100,000 training timesteps
+  - Deterministic evaluation over 1000 episodes
+  - 3 seeds for stochastic, 1 for deterministic
+
+Usage:
+  python run_ppo.py                                    # 3-seed stochastic baseline
+  python run_ppo.py --seeds 1 2 3                      # explicit seeds
+  python run_ppo.py --deterministic --seeds 1           # deterministic mode
+  python run_ppo.py --hidden_size 16                   # vary architecture
 """
 
 import argparse
@@ -19,6 +34,8 @@ from stable_baselines3.common.monitor import Monitor
 from PPO.base_PPO import ModPPO
 
 
+# One-hot encoding is required for FrozenLake because raw integer
+# states (0-15) imply false numeric ordering
 class OneHotWrapper(gym.ObservationWrapper):
 
     def __init__(self, env):
@@ -34,6 +51,7 @@ class OneHotWrapper(gym.ObservationWrapper):
         return one_hot
 
 
+# Callback to record episode rewards and entropy loss during training
 class TrainingLoggerCallback(BaseCallback):
 
     def __init__(self, verbose=0):
@@ -64,6 +82,7 @@ class TrainingLoggerCallback(BaseCallback):
             pass
 
 
+# Environment factory - standard FrozenLake 4x4 map
 def make_frozenlake_env(is_slippery=True, custom_map=None):
     def _init():
         if custom_map is not None:
@@ -76,6 +95,7 @@ def make_frozenlake_env(is_slippery=True, custom_map=None):
     return _init
 
 
+# Evaluation
 def evaluate_agent(model, env_fn, n_episodes=1000):
     eval_env = env_fn()
     rewards = []
@@ -93,6 +113,7 @@ def evaluate_agent(model, env_fn, n_episodes=1000):
     return rewards
 
 
+# Metrics
 def compute_metrics(eval_rewards):
     metrics = {}
     metrics["eval_mean"] = np.mean(eval_rewards)
@@ -101,6 +122,7 @@ def compute_metrics(eval_rewards):
     return metrics
 
 
+# Plotting
 def plot_training_curve(timesteps, rewards, window, title, filename):
     fig, ax = plt.subplots(figsize=(10, 5))
     if len(rewards) >= window:
@@ -165,7 +187,7 @@ def plot_episode_length(timesteps, lengths, window, title, filename):
 
 def save_summary_table(config, metrics, entropy_loss, seed, filename):
     table_data = [
-        ["Environment", f"FrozenLake-v1 {config['map_size']}x{config['map_size']}"],
+        ["Environment", "FrozenLake-v1 4x4"],
         ["Stochastic", f"{config['is_slippery']}"],
         ["Network", f"MLP [{config['hidden_size']}, {config['hidden_size']}]"],
         ["Total Timesteps", f"{config['timesteps']:,}"],
@@ -261,11 +283,11 @@ def run_single_seed(seed, config, output_dir):
         batch_size=64,
         n_epochs=10,
         gamma=0.99,
-        gae_lambda=0.95,
+        gae_lambda=config.get("gae_lambda", 0.95),
         clip_range=config.get("clip_range", 0.2),
         clip_range_vf=None,
         ent_coef=config.get("ent_coef", 0.0),
-        vf_coef=0.5,
+        vf_coef=config.get("vf_coef", 0.5),
         max_grad_norm=0.5,
         seed=seed,
         verbose=0,
@@ -287,6 +309,7 @@ def run_single_seed(seed, config, output_dir):
     metrics = compute_metrics(eval_rewards)
     entropy_loss = callback.entropy_losses[-1] if callback.entropy_losses else float("nan")
 
+    mode = "stochastic" if is_slippery else "deterministic"
     plot_training_curve(
         timesteps_arr, rewards_arr, window=100,
         title=f"Baseline Learning Curve (seed={seed})",
@@ -335,19 +358,19 @@ def main():
     parser.add_argument("--seeds", type=int, nargs="+", default=[1, 2, 3])
     parser.add_argument("--n_eval", type=int, default=1000)
     parser.add_argument("--ent_coef", type=float, default=0.0)
+    parser.add_argument("--gae_lambda", type=float, default=0.95,
+                        help="GAE lambda (default 0.95). Try 0.90 or 0.99.")
+    parser.add_argument("--vf_coef", type=float, default=0.5,
+                        help="Value loss coefficient (default 0.5). Try 0.25 or 1.0.")
     parser.add_argument("--clip_range", type=float, default=0.2,
                         help="PPO clip range (default 0.2)")
     parser.add_argument("--map_size", type=int, default=4,
                         help="Map size to use: 4, 8, 16, 32, 64. Loads from maps/maps.json.")
-    parser.add_argument("--output_dir", type=str, default=None,
-                        help="Root output directory. Defaults to results/initial_results/ppo_variations "
-                             "for 4x4 and results/NxN for larger maps.")
+    parser.add_argument("--output_dir", type=str, default=None)
     parser.add_argument("--run_name", type=str, default=None,
-                        help="Named subfolder for this run, e.g. 'lr1e3'. "
-                             "Results saved to <output_dir>/<run_name>/seed{n}/.")
+                        help="Named subfolder for this run.")
     args = parser.parse_args()
 
-    # Load custom map from maps.json
     maps_path = os.path.join(os.path.dirname(__file__), "maps", "maps.json")
     with open(maps_path, "r") as f:
         all_maps = json.load(f)
@@ -357,7 +380,6 @@ def main():
                          f"Available: {list(all_maps.keys())}")
     custom_map = all_maps[map_key]
 
-    # Auto-route output dir based on map size if not explicitly set
     if args.output_dir is not None:
         base_output_dir = args.output_dir
     elif args.map_size == 4:
@@ -374,6 +396,8 @@ def main():
         "timesteps": args.timesteps,
         "n_eval": args.n_eval,
         "ent_coef": args.ent_coef,
+        "gae_lambda": args.gae_lambda,
+        "vf_coef": args.vf_coef,
         "clip_range": args.clip_range,
         "custom_map": custom_map,
         "map_size": args.map_size,
@@ -390,6 +414,8 @@ def main():
     print(f"  n_steps:       {args.n_steps}")
     print(f"  Learning rate: {args.lr}")
     print(f"  Clip range:    {args.clip_range}")
+    print(f"  GAE lambda:    {args.gae_lambda}")
+    print(f"  vf_coef:       {args.vf_coef}")
     print(f"  Timesteps:     {args.timesteps}")
     print(f"  Seeds:         {args.seeds}")
     print(f"  Eval episodes: {args.n_eval}")
