@@ -98,13 +98,10 @@ class ValueMLP(nn.Module):
             value_fn: callable (state: int) -> float
             model:    trained ValueMLP (for inspection / reuse)
         """
-        # 1. Get VI targets
-        V = self.value_iteration(env, gamma=gamma)
 
-        # 2. Build dataset
+        V = self.value_iteration(env, gamma=gamma)
         X, y = self.build_dataset(V, grid_size)
 
-        # 3. Train MLP
         model = ValueMLP(hidden_size=hidden_size)
         optimizer = optim.Adam(model.parameters(), lr=lr)
         loss_fn = nn.MSELoss()
@@ -121,7 +118,6 @@ class ValueMLP(nn.Module):
 
         model.eval()
 
-        # 4. Return a simple callable
         def value_fn(state: int) -> float:
             feats = torch.tensor(self.state_to_features(state, grid_size), dtype=torch.float32)
             with torch.no_grad():

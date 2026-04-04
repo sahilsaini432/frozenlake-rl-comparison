@@ -24,7 +24,9 @@ class UCTStrategy:
         q = node.value / node.visits
         value_range = self.max_value - self.min_value
         normalized_q = (q - self.min_value) / value_range if value_range > 1e-8 else 0.5
-        return normalized_q + self.exploration_constant * math.sqrt(math.log(node.parent.visits) / node.visits)
+        return normalized_q + self.exploration_constant * math.sqrt(
+            math.log(node.parent.visits) / node.visits
+        )
 
     def best_child(self, node):
         scores = [self.score(child) for child in node.children]
@@ -88,7 +90,7 @@ class PUCTStrategy_Heuristic:
 
     def _ensure_priors(self, node):
         """Lazily assign heuristic priors to all children once the node is fully expanded."""
-        if not hasattr(node, '_heuristic_priors_set'):
+        if not hasattr(node, "_heuristic_priors_set"):
             raw = [self.compute_prior(node.state, child.action) for child in node.children]
             total = sum(raw)
             for child, r in zip(node.children, raw):
@@ -134,7 +136,7 @@ class PUCTStrategy_Softmax:
         return (current_dist - new_dist) / self.temperature
 
     def _ensure_priors(self, node):
-        if not hasattr(node, '_softmax_priors_set'):
+        if not hasattr(node, "_softmax_priors_set"):
             raw = np.array([self._raw_score(node.state, child.action) for child in node.children])
             raw -= raw.max()  # numerical stability
             exp_raw = np.exp(raw)
@@ -156,8 +158,7 @@ class PUCTStrategy_Softmax:
 
 
 class PUCTStrategy_Uniform:
-    """PUCT — Q(v) + C * P(a) * sqrt(N_parent) / (1 + N_v). Used in AlphaGo/AlphaZero.
-    Requires nodes to have a `prior` attribute."""
+    """PUCT — Q(v) + C * P(a) * sqrt(N_parent) / (1 + N_v). Used in AlphaGo/AlphaZero."""
 
     def __init__(self, exploration_constant):
         self.exploration_constant = exploration_constant
