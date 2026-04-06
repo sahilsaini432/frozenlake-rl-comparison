@@ -31,7 +31,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.monitor import Monitor
 
-from PPO.base_PPO import ModPPO
+from .base_PPO import ModPPO
 
 
 # One-hot encoding is required for FrozenLake because raw integer
