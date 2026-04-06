@@ -1,5 +1,8 @@
 """
-ModPPO - Stable baseline PPO with lightweight extension hooks.
+ModPPO - SB3 PPO subclass for experimentation and customization on FrozenLake-v1
+
+Keeps the PPO training loop close to SB3 while exposing logged training
+signals such as entropy loss and approximate KL divergence.
 """
 
 import numpy as np
@@ -115,12 +118,6 @@ class ModPPO(PPO):
 
         if clip_range_vf is not None:
             self.logger.record("train/clip_range_vf", clip_range_vf)
-
-    def reward_processing(self, rewards, obs, dones):
-        return rewards
-
-    def action_selection(self, actions, obs):
-        return actions
 
     def select_action(self, observation, deterministic=False):
         action, _state = self.predict(observation, deterministic=deterministic)
