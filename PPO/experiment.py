@@ -90,11 +90,13 @@ def build_config(args):
 
 def get_output_root(args):
     if args.output_dir is not None:
-        base_output_dir = args.output_dir
-    elif args.map_size == 4:
-        base_output_dir = "results/initial_results/ppo_variations"
-    else:
-        base_output_dir = f"results/{args.map_size}x{args.map_size}"
+        return args.output_dir
+
+    base_output_dir = os.path.join(
+        os.path.dirname(__file__),
+        "results",
+        f"{args.map_size}x{args.map_size}",
+    )
 
     if args.run_name:
         return os.path.join(base_output_dir, args.run_name)
