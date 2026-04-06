@@ -19,6 +19,7 @@ from .plots import (
     save_summary_table,
 )
 from .reward_shaping_wrapper import RewardShapingWrapper
+from .naming import pretty_run_name
 
 
 def make_frozenlake_env(
@@ -138,6 +139,7 @@ def run_single_seed(seed, config, output_dir, label_name):
     n_eval = config["n_eval"]
 
     print(f"\nSeed {seed}")
+    pretty_name = pretty_run_name(label_name)
 
     train_env_fn = make_frozenlake_env(
         is_slippery=is_slippery,
@@ -204,7 +206,7 @@ def run_single_seed(seed, config, output_dir, label_name):
         timesteps_arr,
         rewards_arr,
         window=100,
-        title=f"{label_name} Learning Curve (seed={seed})",
+        title=f"{pretty_name} Learning Curve (seed={seed})",
         filename=os.path.join(output_dir, f"ppo_training_curve_seed{seed}.png"),
     )
 
@@ -212,7 +214,7 @@ def run_single_seed(seed, config, output_dir, label_name):
         plot_entropy_loss(
             callback.training_timesteps,
             callback.entropy_losses,
-            title=f"{label_name} Entropy Loss (seed={seed})",
+            title=f"{pretty_name} Entropy Loss (seed={seed})",
             filename=os.path.join(output_dir, f"ppo_entropy_loss_seed{seed}.png"),
         )
 
@@ -220,7 +222,7 @@ def run_single_seed(seed, config, output_dir, label_name):
         plot_approx_kl(
             callback.training_timesteps,
             callback.approx_kls,
-            title=f"{label_name} PPO Stability Signal (seed={seed})",
+            title=f"{pretty_name} Stability Signal (seed={seed})",
             filename=os.path.join(output_dir, f"ppo_approx_kl_seed{seed}.png"),
         )
 
@@ -229,7 +231,7 @@ def run_single_seed(seed, config, output_dir, label_name):
             timesteps_arr,
             lengths_arr,
             window=100,
-           title=f"{label_name} Episode Length Curve (seed={seed})",
+           title=f"{pretty_name} Episode Length Curve (seed={seed})",
             filename=os.path.join(output_dir, f"ppo_episode_length_seed{seed}.png"),
         )
 
@@ -237,7 +239,7 @@ def run_single_seed(seed, config, output_dir, label_name):
         config,
         metrics,
         seed,
-        label_name,
+        pretty_name,
         train_reward_l100,
         episode_length_l100,
         final_kl,
@@ -266,6 +268,7 @@ def run_experiment(args):
     config = build_config(args)
     run_root = get_output_root(args)
     label_name = args.run_name if args.run_name else "baseline"
+    pretty_name = pretty_run_name(label_name)
 
     print_run_config(config, args, run_root)
 
@@ -289,6 +292,6 @@ def run_experiment(args):
             config,
             all_metrics,
             args.seeds,
-            args.run_name,
+            pretty_name,
             filename=os.path.join(run_root, "ppo_aggregate_summary.png"),
         )

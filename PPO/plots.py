@@ -12,7 +12,7 @@ def plot_training_curve(timesteps, rewards, window, title, filename):
         ax.plot(
             timesteps[window - 1:],
             moving_avg,
-            color="blue",
+            color="darkblue",
             linewidth=2,
             label=f"Success Rate (moving avg, {window} episodes)",
         )
@@ -95,9 +95,9 @@ def plot_episode_length(timesteps, lengths, window, title, filename):
     plt.close()
 
 
-def save_summary_table(config, metrics, seed, run_name, train_reward_l100, episode_length_l100, final_kl, filename):
+def save_summary_table(config, metrics, seed, pretty_name, train_reward_l100, episode_length_l100, final_kl, filename):
     table_data = [
-        ["Environment", "FrozenLake-v1 4x4"],
+        ["Environment", f"FrozenLake-v1 {config['map_size']}x{config['map_size']}"],
         ["Stochastic", f"{config['is_slippery']}"],
         ["Network", f"MLP [{config['hidden_size']}, {config['hidden_size']}]"],
         ["Total Timesteps", f"{config['timesteps']:,}"],
@@ -132,15 +132,14 @@ def save_summary_table(config, metrics, seed, run_name, train_reward_l100, episo
         for j in range(2):
             table[i, j].set_facecolor(color)
 
-    mode = "stochastic" if config["is_slippery"] else "deterministic"
-    ax.set_title(f"PPO Baseline - {mode} (seed={seed})", fontsize=13, fontweight="bold", pad=20)
+    ax.set_title(f"{pretty_name} Summary (seed={seed})", fontsize=13, fontweight="bold", pad=20)
 
     plt.tight_layout()
     plt.savefig(filename, dpi=150, bbox_inches="tight")
     plt.close()
 
 
-def save_aggregate_summary_table(config, all_metrics, seeds, run_name, filename):
+def save_aggregate_summary_table(config, all_metrics, seeds, pretty_name, filename):
     success_rates = [metric["success_rate"] for metric in all_metrics]
 
     per_seed_rows = [
@@ -185,13 +184,12 @@ def save_aggregate_summary_table(config, all_metrics, seeds, run_name, filename)
         for j in range(2):
             table[i, j].set_facecolor(color)
 
-    mode = "stochastic" if config["is_slippery"] else "deterministic"
     ax.set_title(
-        f"PPO Aggregate Summary - {mode} | {run_name or 'baseline'}",
-        fontsize=13,
-        fontweight="bold",
-        pad=20,
-    )
+    f"{pretty_name} Aggregate Summary",
+    fontsize=13,
+    fontweight="bold",
+    pad=20,
+)
 
     plt.tight_layout()
     plt.savefig(filename, dpi=150, bbox_inches="tight")
