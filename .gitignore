@@ -212,3 +212,8 @@ notes/
 .mplconfig/
 
 # DQN sweep under dqn_plots/sweep/ is committed in full (PNGs + CSVs) for report / reference.
+plot_comparison.py
+replay_path.py
+run_batch.py
+runs/
+.vscode/
