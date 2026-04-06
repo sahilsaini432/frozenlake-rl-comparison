@@ -1,105 +1,229 @@
+import gymnasium as gym
+import numpy as np
+import matplotlib.pyplot as plt
+from gymnasium import ObservationWrapper
+from gymnasium.spaces import Box
 from stable_baselines3 import A2C
-import torch as th
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import DummyVecEnv
 
-# Ths files shows the structure to create a agent using A2C as base
+# ── Maps ───────────────────────────────────────────────────────────────────────
+
+four_x_four_map = [
+    "SFFF",
+    "FHFH",
+    "FFFH",
+    "HFFG",
+]
+
+eight_x_eight_map = [
+    "SFFFFFFH",
+    "FFFHFFFF",
+    "FFFFFHFF",
+    "FFFFFFFF",
+    "FFFFFFFF",
+    "FFHHHFFF",
+    "FHFFFFFF",
+    "FHFFFFFG",
+]
+
+sixteen_x_sixteen_map = [
+    "SFFHFFFHFFFHFFFF",
+    "FHFFFHFFHFFHFFHF",
+    "FFHFFFFFHFFHFFFF",
+    "HFFFHFFHFFFHFHFF",
+    "FFFHFFFHFHFFHFFF",
+    "FHFFHFFFHFFFHFHF",
+    "FFFHFFFFHFHFFHFF",
+    "HFFFHFHFFFHFFFHF",
+    "FFHFFFHFHFFFHFFF",
+    "FHFFHFFFHFHFFHFF",
+    "FFFHFFFHFFHFHFFF",
+    "HFHFFFHFHFFFHFFH",
+    "FFFHFHFFFHFFHFFF",
+    "FHFFFHFFHFHFFFHF",
+    "FFHFHFFFHFFFHFFF",
+    "HFFFHFHFFFHFFHFG",
+]
+
+# ── One-hot wrapper ────────────────────────────────────────────────────────────
+
+class OneHotObservationWrapper(ObservationWrapper):
+    """Converts FrozenLake's discrete integer state into a one-hot float vector."""
+    def __init__(self, env):
+        super().__init__(env)
+        n = env.observation_space.n
+        self.n_states = n
+        self.observation_space = Box(low=0.0, high=1.0, shape=(n,), dtype=np.float32)
+
+    def observation(self, obs):
+        one_hot = np.zeros(self.n_states, dtype=np.float32)
+        one_hot[obs] = 1.0
+        return one_hot
 
 
-class ModA2C(A2C):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+# ── Env factory ───────────────────────────────────────────────────────────────
 
-    def train(self):
-        # set training mode for policy
-        self.policy.set_training_mode(True)
+def make_env(desc, is_slippery=True):
+    """Returns a callable that builds one wrapped + monitored env instance."""
+    def _init():
+        e = gym.make("FrozenLake-v1", desc=desc, is_slippery=is_slippery)
+        e = Monitor(e)
+        e = OneHotObservationWrapper(e)
+        return e
+    return _init
 
-        # train on the collected batch of data
-        for rollout_data in self.rollout_buffer.get(self.batch_size):
-            actions = rollout_data.actions
 
-            # evaluate actions based on the current policy given the observations and actions from the rollout buffer
-            # returns - estimated value, log likelihood of taking those actions and entropy of the action distribution.
-            values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions)
+# ── Monitor helpers ───────────────────────────────────────────────────────────
 
-            # relative improvement over baseline
-            # Advantage = (Reward received + Discounted value of next state) - Value of current state
-            advantages = rollout_data.advantages
+def get_monitor(vec_env, idx: int = 0) -> Monitor:
+    """Walk the wrapper stack inside a DummyVecEnv to find the Monitor."""
+    layer = vec_env.envs[idx]
+    while not isinstance(layer, Monitor):
+        if not hasattr(layer, "env"):
+            raise ValueError("No Monitor found in wrapper stack.")
+        layer = layer.env
+    return layer
 
-            # Normalize advantages for better training stability
-            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-            # Increases probability of actions with positive advantages, decreases probability of actions with negative advantages.
-            # policy loss with additional penalty
-            # Responsible for updating actor for action selection.
-            policy_loss = -(advantages * log_prob).mean()
+def smooth(values, window: int = 100):
+    """Rolling mean; returns values unchanged if shorter than window."""
+    if len(values) < window:
+        return np.array(values)
+    kernel = np.ones(window) / window
+    return np.convolve(values, kernel, mode="valid")
 
-            # value loss
-            # updates critic (state value estimation)
-            value_loss = th.nn.functional.mse_loss(rollout_data.returns, values)
 
-            # High entropy = more random/exploratory actions
-            # Low entropy = more deterministic/exploitative actions
-            # Negative sign in loss = reward higher entropy
-            entropy_loss = -th.mean(entropy)
+# ── Plotting ──────────────────────────────────────────────────────────────────
 
-            # Combined loss with weights
-            loss = policy_loss + 0.5 * value_loss + 0.01 * entropy_loss
+def plot_monitor(vec_env, window: int = 200):
+    """Four diagnostic plots sourced from the Monitor inside vec_env."""
+    mon = get_monitor(vec_env)
+    rewards = np.array(mon.get_episode_rewards())
+    lengths = np.array(mon.get_episode_lengths())
 
-            # Backpropagation
-            self.policy.optimizer.zero_grad()
-            loss.backward()
-            # Limits the magnitude of gradients during backpropagation to prevent exploding gradients
-            th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
-            self.policy.optimizer.step()
+    if len(rewards) == 0:
+        print("No episodes recorded yet.")
+        return
 
-        self._n_updates += 1
+    ep = np.arange(len(rewards))
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+    fig.suptitle("Monitor diagnostics", fontsize=14)
 
-    def collect_rollouts(self, env, callback, rollout_buffer, n_rollout_steps):
-        # rollout collection with reward processing
-        rollout_buffer.reset()
-        callback.on_rollout_start()
+    # 1. Success rate
+    ax = axes[0, 0]
+    ax.plot(ep, rewards, alpha=0.15, color="steelblue", linewidth=0.5, label="raw")
+    s = smooth(rewards, window)
+    if len(s) > 0:
+        offset = (len(rewards) - len(s)) // 2
+        ax.plot(np.arange(len(s)) + offset, s,
+                color="steelblue", linewidth=1.5, label=f"{window}-ep rolling mean")
+    ax.set_ylim(-0.05, 1.05)
+    ax.set_xlabel("Episode")
+    ax.set_ylabel("Reward (0 or 1)")
+    ax.set_title("Success rate over episodes")
+    ax.legend(fontsize=8)
 
-        for step in range(n_rollout_steps):
-            with th.no_grad():
-                obs_tensor = th.as_tensor(self._last_obs).to(self.device)
-                actions, values, log_probs = self.policy(obs_tensor)
+    # 2. Episode length
+    ax = axes[0, 1]
+    ax.plot(ep, lengths, alpha=0.15, color="darkorange", linewidth=0.5, label="raw")
+    s = smooth(lengths, window)
+    if len(s) > 0:
+        offset = (len(lengths) - len(s)) // 2
+        ax.plot(np.arange(len(s)) + offset, s,
+                color="darkorange", linewidth=1.5, label=f"{window}-ep rolling mean")
+    ax.set_xlabel("Episode")
+    ax.set_ylabel("Steps")
+    ax.set_title("Episode length")
+    ax.legend(fontsize=8)
 
-            actions = actions.cpu().numpy()
+    # 3. Cumulative successes
+    ax = axes[1, 0]
+    ax.plot(ep, np.cumsum(rewards), color="seagreen", linewidth=1.5)
+    ax.set_xlabel("Episode")
+    ax.set_ylabel("Total successes")
+    ax.set_title("Cumulative successes")
 
-            new_obs, rewards, dones, infos = env.step(actions)
+    # 4. Length vs outcome scatter
+    ax = axes[1, 1]
+    ax.scatter(lengths[rewards == 0], ep[rewards == 0],
+               alpha=0.3, s=4, color="tomato",   label="failure")
+    ax.scatter(lengths[rewards == 1], ep[rewards == 1],
+               alpha=0.5, s=6, color="seagreen", label="success")
+    ax.set_xlabel("Episode length (steps)")
+    ax.set_ylabel("Episode")
+    ax.set_title("Length vs outcome")
+    ax.legend(fontsize=8)
 
-            # reward modification (Think of some more ways to do reward analysis and shaping)
-            rewards = self.reward_processing(rewards, new_obs, dones)
+    plt.tight_layout()
+    plt.show()
 
-            rollout_buffer.add(self._last_obs, actions, rewards, self._last_episode_starts, values, log_probs)
 
-            self._last_obs = new_obs
-            #  if dones is True, the next step is the start of a new episode.
-            self._last_episode_starts = dones
+def plot_training_curve(timesteps, success_rates):
+    """Plot the held-out eval success rate vs training timesteps."""
+    plt.figure(figsize=(8, 4))
+    plt.plot(timesteps, success_rates, marker="o", markersize=4, color="steelblue")
+    plt.xlabel("Training timesteps")
+    plt.ylabel("Success rate (100 eval episodes)")
+    plt.title("A2C on FrozenLake — eval curve")
+    plt.ylim(-0.05, 1.05)
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.show()
 
-        return True
 
-    def reward_processing(self, rewards, obs, dones):
-        # reward shaping logic
-        return rewards * 2.0 if rewards > 0 else rewards - 0.5
+# ── Setup ─────────────────────────────────────────────────────────────────────
 
-    # Prediction logic with action selection strategy
-    def select_action(self, observation, state=None, episode_start=None, deterministic=False):
-        # prediction logic
-        self.policy.set_training_mode(False)
+MAP = eight_x_eight_map
 
-        observation, vectorized_env = self.policy.obs_to_tensor(observation)
+# Separate envs: one for training (records all episodes), one for clean eval
+train_env = DummyVecEnv([make_env(MAP)])
+eval_env  = make_env(MAP)()          # plain unwrapped instance for eval loop
 
-        with th.no_grad():
-            actions = self.policy.get_distribution(observation).get_actions(deterministic=deterministic)
+model = A2C(
+    policy="MlpPolicy",
+    env=train_env,
+    learning_rate=0.0007,
+    n_steps=128,
+    gamma=0.99,
+    gae_lambda=0.95,
+    ent_coef=0.01,
+    vf_coef=0.5,
+    max_grad_norm=0.5,
+    verbose=1,
+)
 
-            # Apply action selection strategy
-            if not deterministic:
-                actions = self.action_selection(actions, observation)
+# ── Training loop ─────────────────────────────────────────────────────────────
 
-        actions = actions.cpu().numpy()
+CHUNK      = 25_000
+N_CHUNKS   = 60         # 300k total timesteps
+N_EVAL     = 100         # eval episodes per checkpoint
 
-        return actions.item()
+timesteps     = []
+success_rates = []
+total_trained = 0
 
-    def action_selection(self, actions, obs):
-        # Exploration strategies during action selection
-        return actions
+for i in range(N_CHUNKS):
+    model.learn(total_timesteps=CHUNK, reset_num_timesteps=False)
+    total_trained += CHUNK
+
+    successes = 0
+    for _ in range(N_EVAL):
+        obs, _ = eval_env.reset()
+        done = truncated = False
+        reward = 0
+        while not done and not truncated:
+            action, _ = model.predict(obs, deterministic=True)
+            obs, reward, done, truncated, _ = eval_env.step(int(action))
+        if reward == 1.0:
+            successes += 1
+
+    rate = successes / N_EVAL
+    timesteps.append(total_trained)
+    success_rates.append(rate)
+    print(f"Chunk {i+1:>2}/{N_CHUNKS}  |  {total_trained:>7,} steps  |  eval success: {rate:.0%}")
+
+# ── Results ───────────────────────────────────────────────────────────────────
+
+plot_training_curve(timesteps, success_rates)
+plot_monitor(train_env, window=200)
