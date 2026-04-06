@@ -1,13 +1,17 @@
 def format_decimal_code(token):
     token = token.strip().lower()
 
-    if token.isdigit():
-        if len(token) == 3:
-            return f"0.{token[1:]}"
-        if len(token) == 2:
-            return f"0.{token[1]}"
-        if len(token) == 1:
-            return f"0.{token}"
+    if not token.isdigit():
+        return token
+
+    if token == "10":
+        return "1.0"
+
+    if len(token) == 3 and token.startswith("0"):
+        return f"0.{token[1:]}"
+
+    if len(token) == 1:
+        return f"0.{token}"
 
     return token
 
