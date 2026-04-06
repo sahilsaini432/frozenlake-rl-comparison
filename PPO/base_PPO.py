@@ -1,16 +1,5 @@
 """
-ModPPO - Stable baseline PPO with lightweight extension hooks
-
-For the baseline, this behaves exactly like SB3 PPO
-The hooks are kept for later experiments but do nothing by default
-
-The train() method closely follows upstream SB3 PPO (Raffin et al, 2021)
-
-SB3 PPO defaults:
-  learning_rate=3e-4, n_steps=2048, batch_size=64, n_epochs=10,
-  gamma=0.99, gae_lambda=0.95, clip_range=0.2, ent_coef=0.0,
-  vf_coef=0.5, max_grad_norm=0.5, net_arch=[64, 64],
-  activation=Tanh, optimizer=Adam
+ModPPO - Stable baseline PPO with lightweight extension hooks.
 """
 
 import numpy as np
@@ -23,7 +12,6 @@ from stable_baselines3.common.utils import explained_variance
 
 
 class ModPPO(PPO):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -37,7 +25,8 @@ class ModPPO(PPO):
             clip_range_vf = self.clip_range_vf(self._current_progress_remaining)
 
         entropy_losses = []
-        pg_losses, value_losses = [], []
+        pg_losses = []
+        value_losses = []
         clip_fractions = []
         continue_training = True
 
@@ -73,6 +62,7 @@ class ModPPO(PPO):
                     values_pred = rollout_data.old_values + th.clamp(
                         values - rollout_data.old_values, -clip_range_vf, clip_range_vf
                     )
+
                 value_loss = F.mse_loss(rollout_data.returns, values_pred)
                 value_losses.append(value_loss.item())
 
@@ -108,6 +98,7 @@ class ModPPO(PPO):
             self.rollout_buffer.values.flatten(),
             self.rollout_buffer.returns.flatten(),
         )
+
         self.logger.record("train/entropy_loss", np.mean(entropy_losses))
         self.logger.record("train/policy_gradient_loss", np.mean(pg_losses))
         self.logger.record("train/value_loss", np.mean(value_losses))
@@ -115,14 +106,16 @@ class ModPPO(PPO):
         self.logger.record("train/clip_fraction", np.mean(clip_fractions))
         self.logger.record("train/loss", loss.item())
         self.logger.record("train/explained_variance", explained_var)
+
         if hasattr(self.policy, "log_std"):
             self.logger.record("train/std", th.exp(self.policy.log_std).mean().item())
+
         self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
         self.logger.record("train/clip_range", clip_range)
+
         if clip_range_vf is not None:
             self.logger.record("train/clip_range_vf", clip_range_vf)
 
-    # Hooks for later experiments - defaults match SB3 baseline (no modification)
     def reward_processing(self, rewards, obs, dones):
         return rewards
 
