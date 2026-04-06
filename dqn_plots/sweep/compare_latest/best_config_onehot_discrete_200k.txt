@@ -1,0 +1,14 @@
+base_tag=onehot_discrete_200k
+map_size=8
+is_slippery=True
+
+Selection rule: max mean(success_rate), tie-break min std(success_rate).
+
+BEST_CONFIG=cfg4_lr_5e4
+  mean=0.9784  std=0.0291  n=5
+
+Aggregate CSV: /Users/Peter/Desktop/CISC856/project/cisc_856_project/dqn_plots/sweep/compare_latest/sweep_aggregate_onehot_discrete_200k.csv
+Comparison figure: /Users/Peter/Desktop/CISC856/project/cisc_856_project/dqn_plots/sweep/compare_latest/sweep_cfg_mean_std_onehot_discrete_200k.png
+
+Per-repeat success rates:
+  cfg4_lr_5e4: [0.996, 0.996, 0.93, 0.998, 0.972]

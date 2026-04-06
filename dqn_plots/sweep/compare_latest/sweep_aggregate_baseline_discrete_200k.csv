@@ -1,0 +1,7 @@
+config_name,n_runs,success_rate_mean,success_rate_std
+cfg4_lr_5e4,5,0.989400,0.011305
+cfg5_more_explore,5,0.977800,0.025509
+cfg1_default_sb3,5,0.928600,0.074262
+cfg2_reference,5,0.869200,0.219624
+cfg3_best_so_far,5,0.845600,0.171630
+cfg6_target_slow,5,0.777800,0.198168

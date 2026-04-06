@@ -206,3 +206,15 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 notes/
+
+# OS / local matplotlib cache
+.DS_Store
+.mplconfig/
+
+# DQN sweep outputs (large): only these paths are committed for grading / reproducibility.
+# Everything else under dqn_plots/sweep/ stays local. Change rep folder name to swap sample run.
+dqn_plots/sweep/*
+!dqn_plots/sweep/compare_latest/
+!dqn_plots/sweep/compare_latest/**
+!dqn_plots/sweep/baseline_discrete_200k_rep1/
+!dqn_plots/sweep/baseline_discrete_200k_rep1/**

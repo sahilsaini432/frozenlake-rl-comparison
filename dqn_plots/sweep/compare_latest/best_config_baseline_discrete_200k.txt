@@ -1,0 +1,14 @@
+base_tag=baseline_discrete_200k
+map_size=8
+is_slippery=True
+
+Selection rule: max mean(success_rate), tie-break min std(success_rate).
+
+BEST_CONFIG=cfg4_lr_5e4
+  mean=0.9894  std=0.0113  n=5
+
+Aggregate CSV: /Users/Peter/Desktop/CISC856/project/cisc_856_project/dqn_plots/sweep/compare_latest/sweep_aggregate_baseline_discrete_200k.csv
+Comparison figure: /Users/Peter/Desktop/CISC856/project/cisc_856_project/dqn_plots/sweep/compare_latest/sweep_cfg_mean_std_baseline_discrete_200k.png
+
+Per-repeat success rates:
+  cfg4_lr_5e4: [0.986, 0.998, 0.996, 0.996, 0.971]
