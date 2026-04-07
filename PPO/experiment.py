@@ -6,7 +6,7 @@ import numpy as np
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-from .base_ppo import ModPPO
+from .base_PPO import ModPPO
 from .callbacks import TrainingLoggerCallback
 from .metrics import compute_metrics, evaluate_agent
 from .onehot_wrapper import OneHotWrapper

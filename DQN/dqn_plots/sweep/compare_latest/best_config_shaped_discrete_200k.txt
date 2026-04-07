@@ -1,0 +1,14 @@
+base_tag=shaped_discrete_200k
+map_size=8
+is_slippery=True
+
+Selection rule: max mean(success_rate), tie-break min std(success_rate).
+
+BEST_CONFIG=cfg3_best_so_far
+  mean=0.9954  std=0.0022  n=5
+
+Aggregate CSV: /Users/Peter/Desktop/CISC856/project/cisc_856_project/dqn_plots/sweep/compare_latest/sweep_aggregate_shaped_discrete_200k.csv
+Comparison figure: /Users/Peter/Desktop/CISC856/project/cisc_856_project/dqn_plots/sweep/compare_latest/sweep_cfg_mean_std_shaped_discrete_200k.png
+
+Per-repeat success rates:
+  cfg3_best_so_far: [0.996, 0.992, 0.998, 0.995, 0.996]

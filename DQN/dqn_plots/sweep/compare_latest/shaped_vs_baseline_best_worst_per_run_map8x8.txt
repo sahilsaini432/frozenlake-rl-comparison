@@ -1,0 +1,37 @@
+Discrete only. Per repeat: best = max(success_rate), worst = min(success_rate) over configs in that sweep.
+Bars: mean ± std of those per-run values across repeats (best-config name can differ each run).
+map_size=8
+
+=== BEST (max) per run ===
+Baseline:
+  - baseline_discrete_200k_rep1 | cfg6_target_slow | success_rate=0.9970
+  - baseline_discrete_200k_rep2 | cfg4_lr_5e4 | success_rate=0.9980
+  - baseline_discrete_200k_rep3 | cfg4_lr_5e4 | success_rate=0.9960
+  - baseline_discrete_200k_rep4 | cfg4_lr_5e4 | success_rate=0.9960
+  - baseline_discrete_200k_rep5 | cfg3_best_so_far | success_rate=0.9970
+  mean=0.9968 std=0.0008
+Shaped:
+  - shaped_discrete_200k_rep1 | cfg3_best_so_far | success_rate=0.9960
+  - shaped_discrete_200k_rep2 | cfg3_best_so_far | success_rate=0.9920
+  - shaped_discrete_200k_rep3 | cfg3_best_so_far | success_rate=0.9980
+  - shaped_discrete_200k_rep4 | cfg3_best_so_far | success_rate=0.9950
+  - shaped_discrete_200k_rep5 | cfg3_best_so_far | success_rate=0.9960
+  mean=0.9954 std=0.0022
+
+=== WORST (min) per run ===
+Baseline:
+  - baseline_discrete_200k_rep1 | cfg3_best_so_far | success_rate=0.6630
+  - baseline_discrete_200k_rep2 | cfg6_target_slow | success_rate=0.6330
+  - baseline_discrete_200k_rep3 | cfg6_target_slow | success_rate=0.5620
+  - baseline_discrete_200k_rep4 | cfg2_reference | success_rate=0.4840
+  - baseline_discrete_200k_rep5 | cfg2_reference | success_rate=0.8910
+  mean=0.6466 std=0.1531
+Shaped:
+  - shaped_discrete_200k_rep1 | cfg2_reference | success_rate=0.6370
+  - shaped_discrete_200k_rep2 | cfg2_reference | success_rate=0.9560
+  - shaped_discrete_200k_rep3 | cfg1_default_sb3 | success_rate=0.8840
+  - shaped_discrete_200k_rep4 | cfg4_lr_5e4 | success_rate=0.7440
+  - shaped_discrete_200k_rep5 | cfg1_default_sb3 | success_rate=0.9680
+  mean=0.8378 std=0.1433
+
+figure: /Users/Peter/Desktop/CISC856/project/cisc_856_project/dqn_plots/sweep/compare_latest/shaped_vs_baseline_best_worst_per_run_map8x8.png

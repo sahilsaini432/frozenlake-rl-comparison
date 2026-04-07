@@ -7,10 +7,15 @@ from stable_baselines3 import A2C
 from tqdm import tqdm
 from gymnasium.envs.toy_text.frozen_lake import generate_random_map
 from A2C.base_A2C import ModA2C
+from PPO.test_PPO import ModPPO
+
 
 
 def selected_agent(args):
-    return ModA2C("MlpPolicy", env)
+    if args.agent == "PPO":
+        return ModPPO("MlpPolicy", env)
+    elif args.agent == "A2C":
+        return ModA2C("MlpPolicy", env)
 
 
 # Parse command line arguments

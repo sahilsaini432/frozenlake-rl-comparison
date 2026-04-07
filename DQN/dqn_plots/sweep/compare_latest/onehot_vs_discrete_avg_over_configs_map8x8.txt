@@ -1,0 +1,20 @@
+Method: per repeat, value = mean(success_rate) over all configs in that sweep; then bars = mean ± std of those values across repeats.
+map_size=8
+
+Discrete:
+  - baseline_discrete_200k_rep1 | mean_over_6_configs=0.9327
+  - baseline_discrete_200k_rep2 | mean_over_6_configs=0.8645
+  - baseline_discrete_200k_rep3 | mean_over_6_configs=0.8735
+  - baseline_discrete_200k_rep4 | mean_over_6_configs=0.8557
+  - baseline_discrete_200k_rep5 | mean_over_6_configs=0.9640
+  across repeats: mean=0.8981 std=0.0476
+
+One-hot:
+  - onehot_discrete_200k_rep1 | mean_over_6_configs=0.9227
+  - onehot_discrete_200k_rep2 | mean_over_6_configs=0.7643
+  - onehot_discrete_200k_rep3 | mean_over_6_configs=0.9713
+  - onehot_discrete_200k_rep4 | mean_over_6_configs=0.9223
+  - onehot_discrete_200k_rep5 | mean_over_6_configs=0.8373
+  across repeats: mean=0.8836 std=0.0823
+
+figure: /Users/Peter/Desktop/CISC856/project/cisc_856_project/dqn_plots/sweep/compare_latest/onehot_vs_discrete_avg_over_configs_map8x8.png

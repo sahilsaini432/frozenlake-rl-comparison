@@ -1,0 +1,20 @@
+Discrete observations only (one_hot=False). Per repeat: mean(success_rate) over all configs; bars = mean ± std across repeats.
+map_size=8
+
+No reward shaping:
+  - baseline_discrete_200k_rep1 | mean_over_6_configs=0.9327
+  - baseline_discrete_200k_rep2 | mean_over_6_configs=0.8645
+  - baseline_discrete_200k_rep3 | mean_over_6_configs=0.8735
+  - baseline_discrete_200k_rep4 | mean_over_6_configs=0.8557
+  - baseline_discrete_200k_rep5 | mean_over_6_configs=0.9640
+  across repeats: mean=0.8981 std=0.0476
+
+Reward shaping:
+  - shaped_discrete_200k_rep1 | mean_over_6_configs=0.9287
+  - shaped_discrete_200k_rep2 | mean_over_6_configs=0.9847
+  - shaped_discrete_200k_rep3 | mean_over_6_configs=0.9653
+  - shaped_discrete_200k_rep4 | mean_over_6_configs=0.9308
+  - shaped_discrete_200k_rep5 | mean_over_6_configs=0.9883
+  across repeats: mean=0.9596 std=0.0286
+
+figure: /Users/Peter/Desktop/CISC856/project/cisc_856_project/dqn_plots/sweep/compare_latest/shaped_vs_baseline_avg_over_configs_map8x8.png
