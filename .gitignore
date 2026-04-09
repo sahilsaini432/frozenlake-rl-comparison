@@ -45,7 +45,6 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
-plot_comparison.py
 replay_path.py
 nosetests.xml
 coverage.xml
@@ -229,7 +228,6 @@ dqn_plots/sweep/*
 !dqn_plots/sweep/baseline_discrete_200k_rep1/
 !dqn_plots/sweep/baseline_discrete_200k_rep1/**
 # DQN sweep under dqn_plots/sweep/ is committed in full (PNGs + CSVs) for report / reference.
-plot_comparison.py
 replay_path.py
 run_batch.py
 runs/

@@ -93,11 +93,6 @@ class ValueMLP(nn.Module):
     def train_value_network(
         self, env, grid_size, gamma=0.99, epochs=1000, lr=1e-3, hidden_size=64, verbose=False
     ):
-        """
-        Returns:
-            value_fn: callable (state: int) -> float
-            model:    trained ValueMLP (for inspection / reuse)
-        """
 
         V = self.value_iteration(env, gamma=gamma)
         X, y = self.build_dataset(V, grid_size)

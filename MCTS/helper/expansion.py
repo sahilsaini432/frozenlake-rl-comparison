@@ -87,11 +87,6 @@ class StandardExpansion:
 
 class ProgressiveWideningExpansion:
     """Progressive widening — allow at most ceil(visits^alpha) children per node.
-
-    At low visit counts the node stays narrow (few children explored).
-    As visits grow, the threshold rises and new children are unlocked.
-    Useful for large action spaces where full expansion wastes simulations.
-
     alpha=0.5 is a common default (sqrt of visits).
     """
 

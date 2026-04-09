@@ -12,15 +12,7 @@ class StandardBackprop:
 
 
 class MaxBackprop:
-    """Max backup — propagate the best reward seen, not the cumulative sum.
-
-    Stores the running max in node.value and sets node.visits so that
-    value / visits == max_reward, keeping Q-value computation in selection
-    strategies correct (they all compute node.value / node.visits).
-
-    Better than averaging when reward is sparse and a single success matters
-    more than the average outcome (e.g. FrozenLake with rare goal reaches).
-    """
+    """Max backup — propagate the best reward seen, not the cumulative sum."""
 
     def __call__(self, node: Node, reward: float):
         while node is not None:
