@@ -12,61 +12,44 @@ def plot_training_curve(timesteps, rewards, window, title, filename):
         ax.plot(
             timesteps[window - 1:],
             moving_avg,
-            color="darkblue",
-            linewidth=2,
-            label=f"Success Rate (moving avg, {window} episodes)",
+            color = "darkblue",
+            linewidth = 2,
+            label = f"Success Rate (moving avg, {window} episodes)"
         )
-
     ax.set_xlabel("Timesteps", fontsize=12)
     ax.set_ylabel("Episode Reward", fontsize=12)
-    ax.set_title(title, fontsize=14)
-    ax.legend(fontsize=10)
-    ax.grid(True, alpha=0.3)
-
+    ax.set_title(title, fontsize = 14)
+    ax.legend(fontsize = 10)
+    ax.grid(True, alpha = 0.3)
     plt.tight_layout()
     plt.savefig(filename, dpi=150, bbox_inches="tight")
     plt.close()
 
 
 def plot_entropy_loss(training_timesteps, entropy_losses, title, filename):
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize = (10, 5))
     ax.plot(training_timesteps, entropy_losses, color="purple", linewidth=2)
-    ax.set_xlabel("Timesteps", fontsize=12)
-    ax.set_ylabel("Entropy Loss", fontsize=12)
-    ax.set_title(title, fontsize=14)
-    ax.grid(True, alpha=0.3)
-    ax.annotate(
-        "Lower (more negative) = less exploration",
-        xy=(0.98, 0.98),
-        xycoords="axes fraction",
-        ha="right",
-        va="top",
-        fontsize=9,
-        color="gray",
-    )
+    ax.set_xlabel("Timesteps", fontsize = 12)
+    ax.set_ylabel("Entropy Loss", fontsize = 12)
+    ax.set_title(title, fontsize =14)
+    ax.grid(True, alpha = 0.3)
+    ax.annotate("Lower (more negative) = less exploration", xy = (0.98, 0.98), xycoords = "axes fraction",
+        ha = "right", va = "top", fontsize = 9, color = "gray")
 
     plt.tight_layout()
-    plt.savefig(filename, dpi=150, bbox_inches="tight")
+    plt.savefig(filename, dpi = 150, bbox_inches = "tight")
     plt.close()
 
 
 def plot_approx_kl(training_timesteps, approx_kls, title, filename):
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize = (10, 5))
     ax.plot(training_timesteps, approx_kls, color="red", linewidth=2)
-    ax.set_xlabel("Timesteps", fontsize=12)
-    ax.set_ylabel("Approx KL Divergence", fontsize=12)
-    ax.set_title(title, fontsize=14)
-    ax.grid(True, alpha=0.3)
-    ax.annotate(
-        "Small + stable = healthy, exploding = policy collapse",
-        xy=(0.98, 0.98),
-        xycoords="axes fraction",
-        ha="right",
-        va="top",
-        fontsize=9,
-        color="gray",
-    )
-
+    ax.set_xlabel("Timesteps", fontsize = 12)
+    ax.set_ylabel("Approx KL Divergence", fontsize = 12)
+    ax.set_title(title, fontsize = 14)
+    ax.grid(True, alpha = 0.3)
+    ax.annotate("Small + stable = healthy, exploding = policy collapse", xy = (0.98, 0.98),
+        xycoords = "axes fraction", ha = "right", va = "top", fontsize = 9, color = "gray")
     plt.tight_layout()
     plt.savefig(filename, dpi=150, bbox_inches="tight")
     plt.close()
@@ -75,25 +58,21 @@ def plot_approx_kl(training_timesteps, approx_kls, title, filename):
 def plot_episode_length(timesteps, lengths, window, title, filename):
     fig, ax = plt.subplots(figsize=(10, 5))
     if len(lengths) >= window:
-        moving_avg = np.convolve(lengths, np.ones(window) / window, mode="valid")
+        moving_avg = np.convolve(lengths, np.ones(window) / window, mode = "valid")
         ax.plot(
             timesteps[window - 1:],
             moving_avg,
-            color="green",
-            linewidth=2,
-            label=f"Avg Episode Length ({window} episodes)",
-        )
-
+            color = "green",
+            linewidth = 2,
+            label = f"Avg Episode Length ({window} episodes)")
     ax.set_xlabel("Timesteps", fontsize=12)
     ax.set_ylabel("Episode Length", fontsize=12)
     ax.set_title(title, fontsize=14)
     ax.legend(fontsize=10)
     ax.grid(True, alpha=0.3)
-
     plt.tight_layout()
     plt.savefig(filename, dpi=150, bbox_inches="tight")
     plt.close()
-
 
 def save_summary_table(config, metrics, seed, pretty_name, train_reward_l100, episode_length_l100, final_kl, filename):
     table_data = [
@@ -113,35 +92,29 @@ def save_summary_table(config, metrics, seed, pretty_name, train_reward_l100, ep
     ax.axis("off")
 
     table = ax.table(
-        cellText=table_data,
-        colLabels=["Metric", "Value"],
-        cellLoc="left",
-        colLoc="left",
-        loc="center",
+        cellText = table_data,
+        colLabels = ["Metric", "Value"],
+        cellLoc = "left",
+        colLoc = "left",
+        loc = "center"
     )
     table.auto_set_font_size(False)
     table.set_fontsize(10)
     table.scale(1.2, 1.5)
-
     for j in range(2):
         table[0, j].set_facecolor("#4472C4")
         table[0, j].set_text_props(color="white", fontweight="bold")
-
     for i in range(1, len(table_data) + 1):
         color = "#D9E2F3" if i % 2 == 0 else "white"
         for j in range(2):
             table[i, j].set_facecolor(color)
-
     ax.set_title(f"{pretty_name} Summary (seed={seed})", fontsize=13, fontweight="bold", pad=20)
-
     plt.tight_layout()
     plt.savefig(filename, dpi=150, bbox_inches="tight")
     plt.close()
 
-
 def save_aggregate_summary_table(config, all_metrics, seeds, pretty_name, filename):
     success_rates = [metric["success_rate"] for metric in all_metrics]
-
     per_seed_rows = [
         [f"Seed {seed} Success Rate", f"{metric['success_rate']:.1%}"]
         for seed, metric in zip(seeds, all_metrics)
@@ -163,13 +136,12 @@ def save_aggregate_summary_table(config, all_metrics, seeds, pretty_name, filena
 
     fig, ax = plt.subplots(figsize=(9, 0.5 * (len(table_data) + 2) + 1.5))
     ax.axis("off")
-
     table = ax.table(
         cellText=table_data,
         colLabels=["Metric", "Value"],
         cellLoc="left",
         colLoc="left",
-        loc="center",
+        loc="center"
     )
     table.auto_set_font_size(False)
     table.set_fontsize(10)
@@ -184,13 +156,7 @@ def save_aggregate_summary_table(config, all_metrics, seeds, pretty_name, filena
         for j in range(2):
             table[i, j].set_facecolor(color)
 
-    ax.set_title(
-    f"{pretty_name} Aggregate Summary",
-    fontsize=13,
-    fontweight="bold",
-    pad=20,
-)
-
+    ax.set_title(f"{pretty_name} Aggregate Summary", fontsize = 13, fontweight = "bold", pad=20)
     plt.tight_layout()
-    plt.savefig(filename, dpi=150, bbox_inches="tight")
+    plt.savefig(filename, dpi = 150, bbox_inches = "tight")
     plt.close()

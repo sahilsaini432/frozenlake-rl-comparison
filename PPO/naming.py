@@ -1,66 +1,51 @@
-def format_decimal_code(token):
-    token = token.strip().lower()
+"""
+Helper just for naming for plot titles and tables
+"""
 
+def fmt_decimal(token):
+    token = token.strip().lower()
     if not token.isdigit():
         return token
-
     if token == "10":
         return "1.0"
-
     if len(token) == 3 and token.startswith("0"):
         return f"0.{token[1:]}"
-
     if len(token) == 1:
         return f"0.{token}"
-
     return token
-
-
+ 
+ 
 def pretty_run_name(run_name):
     if not run_name:
         return "Baseline"
-
     parts = run_name.split("_")
-    pretty_parts = []
-
+    out = []
     i = 0
     while i < len(parts):
-        part = parts[i].lower()
-
-        if part == "baseline":
-            pretty_parts.append("Baseline")
-
-        elif part.startswith("lr") and len(part) > 2:
-            pretty_parts.append(f"lr = {part[2:]}")
-
-        elif part == "gae" and i + 1 < len(parts):
-            pretty_parts.append(f"GAE = {format_decimal_code(parts[i + 1])}")
+        p = parts[i].lower()
+        if p == "baseline":
+            out.append("Baseline")
+        elif p.startswith("lr") and len(p) > 2:
+            out.append(f"lr = {p[2:]}")
+        elif p == "gae" and i + 1 < len(parts):
+            out.append(f"GAE = {fmt_decimal(parts[i + 1])}")
             i += 1
-
-        elif part.startswith("ent") and len(part) > 3:
-            pretty_parts.append(f"ent = {format_decimal_code(part[3:])}")
-
-        elif part == "ent" and i + 1 < len(parts):
-            pretty_parts.append(f"ent = {format_decimal_code(parts[i + 1])}")
+        elif p.startswith("ent") and len(p) > 3:
+            out.append(f"ent = {fmt_decimal(p[3:])}")
+        elif p == "ent" and i + 1 < len(parts):
+            out.append(f"ent = {fmt_decimal(parts[i + 1])}")
             i += 1
-
-        elif part == "vf" and i + 2 < len(parts) and parts[i + 1].lower() == "coef":
-            pretty_parts.append(f"vf coef = {format_decimal_code(parts[i + 2])}")
+        elif p == "vf" and i + 2 < len(parts) and parts[i + 1].lower() == "coef":
+            out.append(f"vf coef = {fmt_decimal(parts[i + 2])}")
             i += 2
-
-        elif part == "manhattan" and i + 1 < len(parts):
-            pretty_parts.append(f"Manhattan = {format_decimal_code(parts[i + 1])}")
+        elif p == "manhattan" and i + 1 < len(parts):
+            out.append(f"Manhattan = {fmt_decimal(parts[i + 1])}")
             i += 1
-
-        elif part.endswith("k") and part[:-1].isdigit():
-            pretty_parts.append(part)
-
-        elif part == "5seeds":
-            pretty_parts.append("verification")
-
+        elif p.endswith("k") and p[:-1].isdigit():
+            out.append(p)
+        elif p == "5seeds":
+            out.append("verification")
         else:
-            pretty_parts.append(parts[i])
-
+            out.append(parts[i])
         i += 1
-
-    return ", ".join(pretty_parts)
+    return ", ".join(out)
