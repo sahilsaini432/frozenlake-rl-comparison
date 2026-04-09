@@ -28,8 +28,8 @@ maps.json       - Shared pre-generated maps (sizes 4–128)
 ```bash
 # MCTS
 cd MCTS
-python run_mcts.py --selection uct --rollout random --final robust_child --grid 8 --episodes 100
-python run_batch.py   # run all configurations
+python3 run_mcts.py --selection uct --rollout random --final robust_child --grid 8 --episodes 100
+python3 run_batch.py   # run all configurations
 
 # PPO
 cd PPO

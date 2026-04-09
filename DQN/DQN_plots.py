@@ -399,8 +399,8 @@ if __name__ == "__main__":
 
     if args.run_dir is None:
         print("Usage:")
-        print("  Train + save figures:  python DQN/base_DQN.py")
-        print("  Replot from CSV only:  python DQN/DQN_plots.py dqn_plots/4x4 [--map-size 4] [--slip]")
+        print("  Train + save figures:  python3 DQN/base_DQN.py")
+        print("  Replot from CSV only:  python3 DQN/DQN_plots.py dqn_plots/4x4 [--map-size 4] [--slip]")
         sys.exit(0)
 
     replot_from_directory(args.run_dir, map_size=args.map_size, is_slippery=args.slip)
