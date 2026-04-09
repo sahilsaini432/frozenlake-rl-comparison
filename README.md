@@ -55,105 +55,157 @@ pip3 install gymnasium stable-baselines3 torch matplotlib tqdm
 ```
 
 # Supplemental Results
+*All PPO plots show seed 2 for consistency across configurations, except vf_coef = 1.0 verification which shows seed 4 as the failure case. Note that y-axis scales differ between plots, keep that in mind when comparing across configs*
+
 ## Table of Contents
-1. [DQN — One-Hot vs Discrete Encoding](#1-dqn--one-hot-vs-discrete-encoding)
-2. [DQN — Reward Shaping vs Baseline](#2-dqn--reward-shaping-vs-baseline)
-3. [DQN — Per-Condition Sweep Results](#3-dqn--per-condition-sweep-results)
-4. [MCTS — Average Reward by Component](#4-mcts--average-reward-by-component)
-5. [MCTS — Average Steps to Goal by Component](#5-mcts--average-steps-to-goal-by-component)
-6. [MCTS — Average Episode Time by Component](#6-mcts--average-episode-time-by-component)
-7. [PPO — Optimized Configuration](#7-ppo--optimized-configuration)
-8. [PPO — GAE Lambda Variation](#8-ppo--gae-lambda-variation)
-9. [PPO — Value Loss Coefficient Variation](#9-ppo--value-loss-coefficient-variation)
-10. [PPO — Reward Shaping](#10-ppo--reward-shaping)
+1. [DQN: One-Hot vs Discrete Encoding](#1-dqn-one-hot-vs-discrete-encoding)
+2. [DQN: Reward Shaping vs Baseline](#2-dqn-reward-shaping-vs-baseline)
+3. [DQN: Per-Condition Sweep Results](#3-dqn-per-condition-sweep-results)
+4. [MCTS: Average Reward by Component](#4-mcts-average-reward-by-component)
+5. [MCTS: Average Steps to Goal by Component](#5-mcts-average-steps-to-goal-by-component)
+6. [MCTS: Average Episode Time by Component](#6-mcts-average-episode-time-by-component)
+7. [PPO: Optimized Configuration](#7-ppo-optimized-configuration)
+8. [PPO: GAE Lambda Variation](#8-ppo-gae-lambda-variation)
+9. [PPO: Value Loss Coefficient Variation](#9-ppo-value-loss-coefficient-variation)
+10. [PPO: Reward Shaping](#10-ppo-reward-shaping)
 
 ---
 
-### 1. DQN — One-Hot vs Discrete Encoding
+### 1. DQN: One-Hot vs Discrete Encoding
 #### Average Over All Configs
-![One-Hot vs Discrete Avg](DQN/dqn_plots/sweep/compare_latest/onehot_vs_discrete_avg_over_configs_map8x8.png)
+<img src="DQN/dqn_plots/sweep/compare_latest/onehot_vs_discrete_avg_over_configs_map8x8.png" width="600"/>
+
 #### Fixed Config5 (More Explore)
-![One-Hot vs Discrete cfg5](DQN/dqn_plots/sweep/compare_latest/onehot_vs_discrete_fixed_cfg5_more_explore_map8x8.png)
+<img src="DQN/dqn_plots/sweep/compare_latest/onehot_vs_discrete_fixed_cfg5_more_explore_map8x8.png" width="600"/>
+
 #### Sweep Mean ± Std (One-Hot)
-![Sweep One-Hot](DQN/dqn_plots/sweep/compare_latest/sweep_cfg_mean_std_onehot_discrete_200k.png)
+<img src="DQN/dqn_plots/sweep/compare_latest/sweep_cfg_mean_std_onehot_discrete_200k.png" width="600"/>
 
 ---
 
-### 2. DQN — Reward Shaping vs Baseline
+### 2. DQN: Reward Shaping vs Baseline
 #### Average Over All Configs
-![Shaped vs Baseline Avg](DQN/dqn_plots/sweep/compare_latest/shaped_vs_baseline_avg_over_configs_map8x8.png)
+<img src="DQN/dqn_plots/sweep/compare_latest/shaped_vs_baseline_avg_over_configs_map8x8.png" width="600"/>
+
 #### Best/Worst Per Run
-![Shaped vs Baseline Best Worst](DQN/dqn_plots/sweep/compare_latest/shaped_vs_baseline_best_worst_per_run_map8x8.png)
+<img src="DQN/dqn_plots/sweep/compare_latest/shaped_vs_baseline_best_worst_per_run_map8x8.png" width="600"/>
+
 #### Fixed Config5 (More Explore)
-![Shaped vs Baseline cfg5](DQN/dqn_plots/sweep/compare_latest/shaped_vs_baseline_fixed_cfg5_more_explore_map8x8.png)
+<img src="DQN/dqn_plots/sweep/compare_latest/shaped_vs_baseline_fixed_cfg5_more_explore_map8x8.png" width="600"/>
 
 ---
 
-### 3. DQN — Per-Condition Sweep Results
+### 3. DQN: Per-Condition Sweep Results
 #### Sweep Mean ± Std (Shaped)
-![Sweep Shaped](DQN/dqn_plots/sweep/compare_latest/sweep_cfg_mean_std_shaped_discrete_200k.png)
+<img src="DQN/dqn_plots/sweep/compare_latest/sweep_cfg_mean_std_shaped_discrete_200k.png" width="600"/>
 
 ---
 
-### 4. MCTS — Average Reward by Component
-![MCTS Average Reward](MCTS/graphs/comparison/avg_reward_overview.png)
+### 4. MCTS: Average Reward by Component
+<img src="MCTS/graphs/comparison/avg_reward_overview.png" width="600"/>
 
 ---
 
-### 5. MCTS — Average Steps to Goal by Component
-![MCTS Average Steps](MCTS/graphs/comparison/avg_steps_overview.png)
+### 5. MCTS: Average Steps to Goal by Component
+<img src="MCTS/graphs/comparison/avg_steps_overview.png" width="600"/>
 
 ---
 
-### 6. MCTS — Average Episode Time by Component
-![MCTS Average Episode Time](MCTS/graphs/comparison/avg_episode_time_overview.png)
+### 6. MCTS: Average Episode Time by Component
+<img src="MCTS/graphs/comparison/avg_episode_time_overview.png" width="600"/>
 
 ---
 
-### 7. PPO — Optimized Configuration
-*lr=1e-3, 200k timesteps, seed 2*
+### 7. PPO: Optimized Configuration
+*Left to right: learning curve, episode length, KL divergence*
 
-![Learning Curve](PPO/results/8x8/lr1e3_200k/seed2/ppo_training_curve_seed2.png) ![Episode Length](PPO/results/8x8/lr1e3_200k/seed2/ppo_episode_length_seed2.png) ![KL Divergence](PPO/results/8x8/lr1e3_200k/seed2/ppo_approx_kl_seed2.png)
-
----
-
-### 8. PPO — GAE Lambda Variation
-*All runs at 3 seeds, seed 2 shown*
-
-#### λ=0.99
-![Learning Curve](PPO/results/8x8/gae_099/seed2/ppo_training_curve_seed2.png) ![Episode Length](PPO/results/8x8/gae_099/seed2/ppo_episode_length_seed2.png) ![KL Divergence](PPO/results/8x8/gae_099/seed2/ppo_approx_kl_seed2.png)
-
-#### λ=0.95 (baseline)
-![Learning Curve](PPO/results/8x8/lr1e3_200k/seed2/ppo_training_curve_seed2.png) ![Episode Length](PPO/results/8x8/lr1e3_200k/seed2/ppo_episode_length_seed2.png) ![KL Divergence](PPO/results/8x8/lr1e3_200k/seed2/ppo_approx_kl_seed2.png)
-
-#### λ=0.85
-![Learning Curve](PPO/results/8x8/gae_085/seed2/ppo_training_curve_seed2.png) ![Episode Length](PPO/results/8x8/gae_085/seed2/ppo_episode_length_seed2.png) ![KL Divergence](PPO/results/8x8/gae_085/seed2/ppo_approx_kl_seed2.png)
+<p>
+  <img src="PPO/results/8x8/lr1e3_200k/seed2/ppo_training_curve_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/lr1e3_200k/seed2/ppo_episode_length_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/lr1e3_200k/seed2/ppo_approx_kl_seed2.png" width="32%"/>
+</p>
 
 ---
 
-### 9. PPO — Value Loss Coefficient Variation
+### 8. PPO: GAE Lambda Variation
+*Left to right: learning curve, episode length, KL divergence*
 
-#### vf_coef=0.25
-![Learning Curve](PPO/results/8x8/vf_coef_025/seed2/ppo_training_curve_seed2.png) ![Episode Length](PPO/results/8x8/vf_coef_025/seed2/ppo_episode_length_seed2.png) ![KL Divergence](PPO/results/8x8/vf_coef_025/seed2/ppo_approx_kl_seed2.png)
+#### λ = 0.99
+<p>
+  <img src="PPO/results/8x8/gae_099/seed2/ppo_training_curve_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/gae_099/seed2/ppo_episode_length_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/gae_099/seed2/ppo_approx_kl_seed2.png" width="32%"/>
+</p>
 
-#### vf_coef=0.5 (baseline)
-![Learning Curve](PPO/results/8x8/lr1e3_200k/seed2/ppo_training_curve_seed2.png) ![Episode Length](PPO/results/8x8/lr1e3_200k/seed2/ppo_episode_length_seed2.png) ![KL Divergence](PPO/results/8x8/lr1e3_200k/seed2/ppo_approx_kl_seed2.png)
+#### λ = 0.95 (optimized baseline)
+<p>
+  <img src="PPO/results/8x8/lr1e3_200k/seed2/ppo_training_curve_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/lr1e3_200k/seed2/ppo_episode_length_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/lr1e3_200k/seed2/ppo_approx_kl_seed2.png" width="32%"/>
+</p>
 
-#### vf_coef=1.0 (3 seeds — appears promising)
-![Learning Curve](PPO/results/8x8/vf_coef_10/seed2/ppo_training_curve_seed2.png) ![Episode Length](PPO/results/8x8/vf_coef_10/seed2/ppo_episode_length_seed2.png) ![KL Divergence](PPO/results/8x8/vf_coef_10/seed2/ppo_approx_kl_seed2.png)
-
-#### vf_coef=1.0 (5-seed verification — variance increase)
-![Learning Curve](PPO/results/8x8/vf_coef_10_5seeds/seed2/ppo_training_curve_seed2.png) ![Episode Length](PPO/results/8x8/vf_coef_10_5seeds/seed2/ppo_episode_length_seed2.png) ![KL Divergence](PPO/results/8x8/vf_coef_10_5seeds/seed2/ppo_approx_kl_seed2.png)
+#### λ = 0.85
+<p>
+  <img src="PPO/results/8x8/gae_085/seed2/ppo_training_curve_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/gae_085/seed2/ppo_episode_length_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/gae_085/seed2/ppo_approx_kl_seed2.png" width="32%"/>
+</p>
 
 ---
 
-### 10. PPO — Reward Shaping
+### 9. PPO: Value Loss Coefficient Variation
+*Left to right: learning curve, episode length, KL divergence*
+
+#### vf_coef = 0.25
+<p>
+  <img src="PPO/results/8x8/vf_coef_025/seed2/ppo_training_curve_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/vf_coef_025/seed2/ppo_episode_length_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/vf_coef_025/seed2/ppo_approx_kl_seed2.png" width="32%"/>
+</p>
+
+#### vf_coef = 0.5 (optimized baseline)
+<p>
+  <img src="PPO/results/8x8/lr1e3_200k/seed2/ppo_training_curve_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/lr1e3_200k/seed2/ppo_episode_length_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/lr1e3_200k/seed2/ppo_approx_kl_seed2.png" width="32%"/>
+</p>
+
+#### vf_coef = 1.0
+<p>
+  <img src="PPO/results/8x8/vf_coef_10/seed2/ppo_training_curve_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/vf_coef_10/seed2/ppo_episode_length_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/vf_coef_10/seed2/ppo_approx_kl_seed2.png" width="32%"/>
+</p>
+
+#### vf_coef = 1.0 (5 seeds fails at specifically seed 4)
+<p>
+  <img src="PPO/results/8x8/vf_coef_10_5seeds/seed4/ppo_training_curve_seed4.png" width="32%"/>
+  <img src="PPO/results/8x8/vf_coef_10_5seeds/seed4/ppo_episode_length_seed4.png" width="32%"/>
+  <img src="PPO/results/8x8/vf_coef_10_5seeds/seed4/ppo_approx_kl_seed4.png" width="32%"/>
+</p>
+
+---
+
+### 10. PPO: Reward Shaping
+*Left to right: learning curve, episode length, KL divergence*
 
 #### No Shaping (optimized baseline)
-![Learning Curve](PPO/results/8x8/lr1e3_200k/seed2/ppo_training_curve_seed2.png) ![Episode Length](PPO/results/8x8/lr1e3_200k/seed2/ppo_episode_length_seed2.png) ![KL Divergence](PPO/results/8x8/lr1e3_200k/seed2/ppo_approx_kl_seed2.png)
+<p>
+  <img src="PPO/results/8x8/lr1e3_200k/seed2/ppo_training_curve_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/lr1e3_200k/seed2/ppo_episode_length_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/lr1e3_200k/seed2/ppo_approx_kl_seed2.png" width="32%"/>
+</p>
 
-#### Step Penalty=0.01
-![Learning Curve](PPO/results/8x8/step_penalty_001/seed2/ppo_training_curve_seed2.png) ![Episode Length](PPO/results/8x8/step_penalty_001/seed2/ppo_episode_length_seed2.png) ![KL Divergence](PPO/results/8x8/step_penalty_001/seed2/ppo_approx_kl_seed2.png)
+#### Step Penalty = 0.01
+<p>
+  <img src="PPO/results/8x8/step_penalty_001/seed2/ppo_training_curve_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/step_penalty_001/seed2/ppo_episode_length_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/step_penalty_001/seed2/ppo_approx_kl_seed2.png" width="32%"/>
+</p>
 
-#### PBRS Manhattan=0.01
-![Learning Curve](PPO/results/8x8/manhattan_001/seed2/ppo_training_curve_seed2.png) ![Episode Length](PPO/results/8x8/manhattan_001/seed2/ppo_episode_length_seed2.png) ![KL Divergence](PPO/results/8x8/manhattan_001/seed2/ppo_approx_kl_seed2.png)
+#### PBRS Manhattan = 0.01
+<p>
+  <img src="PPO/results/8x8/manhattan_001/seed2/ppo_training_curve_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/manhattan_001/seed2/ppo_episode_length_seed2.png" width="32%"/>
+  <img src="PPO/results/8x8/manhattan_001/seed2/ppo_approx_kl_seed2.png" width="32%"/>
+</p>
