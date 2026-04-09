@@ -4,9 +4,9 @@ AI Generated Script to create comprehensive comparison plots from MCTS experimen
 Reads results.jsonl and produces comparison plots across all recorded configurations.
 
 Usage (from the MCTS directory):
-    python -m metrics.plot_comparison
-    python -m metrics.plot_comparison --metric avg_reward
-    python -m metrics.plot_comparison --out my_folder
+    python3 -m metrics.plot_comparison
+    python3 -m metrics.plot_comparison --metric avg_reward
+    python3 -m metrics.plot_comparison --out my_folder
 """
 
 import argparse

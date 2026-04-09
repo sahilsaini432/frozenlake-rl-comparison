@@ -3,7 +3,7 @@
 AI Generated script to create custom FrozenLake maps with multiple paths and moderate hole density.
 
 Run this script directly to generate maps and save them to maps.json:
-    python helper/map_generator.py
+    python3 helper/map_generator.py
 
 Design goals:
   - Multiple viable paths from S (top-left) to G (bottom-right)
