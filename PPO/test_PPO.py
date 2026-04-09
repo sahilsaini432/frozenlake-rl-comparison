@@ -12,13 +12,13 @@ def make_env(render_mode=None):
     return gym.make("FrozenLake-v1", is_slippery=True, render_mode=render_mode)
 
 # Create PPO agent and train it on the environment
-def train_agent(total_timesteps = 50000):
+def train_agent(total_timesteps):
     env = make_env()
-    model = PPO("MlpPolicy", env, verbose=1)
+    model = PPO("MlpPolicy", env, learning_rate=1e-4, ent_coef=0.0, n_steps=1024, verbose=1)
     model.learn(total_timesteps=total_timesteps)
     return model
 
-def test_agent(model, num_episodes=10, render_mode=None):
+def test_agent(model, num_episodes, render_mode=None):
     env = make_env(render_mode=render_mode)
 
     rewards = []
@@ -54,7 +54,7 @@ def test_agent(model, num_episodes=10, render_mode=None):
     return avg_reward, success_rate
 
 if __name__ == "__main__":
-    model = train_agent(total_timesteps=10000)
+    model = train_agent(total_timesteps=50000)
     test_agent(model, num_episodes=20)
 
 

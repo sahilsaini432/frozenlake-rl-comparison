@@ -1,8 +1,3 @@
-"""
-Visualization only: CSV + figures from a DQNTrainingLogger (see base_DQN.py).
-
-Run training in base_DQN, then call save_training_visualization(logger, ...).
-"""
 import os
 from os import path
 

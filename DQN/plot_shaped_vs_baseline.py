@@ -1,24 +1,3 @@
-"""
-Discrete baseline (no shaping) vs discrete + reward shaping from sweep_summary.csv only.
-
-  --plot avg (default): each repeat = mean(success_rate) over all configs; bars = mean ± std.
-
-  --plot best-worst: each repeat = min / max over configs in that sweep; two panels compare
-  baseline vs shaped for best and for worst separately.
-
-  --plot all: write both figures.
-
-  python DQN/plot_shaped_vs_baseline.py \\
-    --baseline-base-tag baseline_discrete_200k --shaped-base-tag shaped_discrete_200k \\
-    --map-size 8 --discover-repeats --plot all
-
-  Fixed config only (new filenames; does not overwrite avg / best-worst):
-
-  python DQN/plot_shaped_vs_baseline.py \\
-    --baseline-base-tag baseline_discrete_200k --shaped-base-tag shaped_discrete_200k \\
-    --map-size 8 --discover-repeats --fixed-config cfg5_more_explore
-"""
-
 from __future__ import annotations
 
 import os
