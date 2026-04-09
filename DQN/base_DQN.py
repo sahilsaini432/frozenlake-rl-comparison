@@ -249,7 +249,7 @@ if __name__ == "__main__":
 
     TS = 200_000
     PROJECT_ROOT = Path(__file__).resolve().parent.parent
-    PLOT_DIR = PROJECT_ROOT / "dqn_plots" / plot_subdir
+    PLOT_DIR = Path(__file__).resolve().parent / "dqn_plots" / plot_subdir
     if USE_ONE_HOT:
         PLOT_DIR = PLOT_DIR / "onehot"
     if USE_REWARD_SHAPING:

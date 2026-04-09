@@ -597,7 +597,8 @@ def main():
     args = parser.parse_args()
 
     project_root = Path(__file__).resolve().parent.parent
-    sweep_base = args.sweep_base or (project_root / "dqn_plots" / "sweep")
+    plot_path = Path(__file__).resolve().parent
+    sweep_base = args.sweep_base or (plot_path / "dqn_plots" / "sweep")
 
     if args.discover_repeats:
         if not args.baseline_base_tag or not args.shaped_base_tag:

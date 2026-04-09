@@ -327,7 +327,8 @@ def run_sweep(
     also_replot_config: str | None = None,
 ):
     project_root = Path(__file__).resolve().parent.parent
-    sweep_base = project_root / "dqn_plots" / "sweep"
+    plot_path = Path(__file__).resolve().parent
+    sweep_base = plot_path / "dqn_plots" / "sweep"
     sweep_base.mkdir(parents=True, exist_ok=True)
 
     if one_hot is None:
@@ -466,7 +467,9 @@ def run_sweep(
                 print(f"  {p}")
     else:
         if run_tag is None:
-            raise ValueError("--analyze-only requires --run-tag <base_tag> (folders <base_tag>_rep* on disk).")
+            raise ValueError(
+                "--analyze-only requires --run-tag <base_tag> (folders <base_tag>_rep* on disk)."
+            )
         for rep in range(n_repeats):
             run_tag_cur = base_tag if n_repeats == 1 else f"{base_tag}_rep{rep + 1}"
             sp = sweep_base / run_tag_cur / "sweep_summary.csv"

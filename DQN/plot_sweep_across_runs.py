@@ -74,7 +74,7 @@ def plot_across_runs(sweep_base: Path, n_runs: int = 3, map_size: int | None = N
         for _, vals in cfg_vals:
             mean = sum(vals) / len(vals)
             var = sum((v - mean) ** 2 for v in vals) / max(1, len(vals) - 1)
-            stdev = var ** 0.5
+            stdev = var**0.5
             means.append(mean)
             stdevs.append(stdev)
 
@@ -110,12 +110,14 @@ def plot_across_runs(sweep_base: Path, n_runs: int = 3, map_size: int | None = N
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Compare performance + stability across multiple sweep runs.")
+    parser = argparse.ArgumentParser(
+        description="Compare performance + stability across multiple sweep runs."
+    )
     parser.add_argument("--n-runs", type=int, default=3, help="Number of recent runs to compare.")
     parser.add_argument("--map-size", type=int, default=None, help="Optional map size filter (e.g., 8).")
     args = parser.parse_args()
 
     project_root = Path(__file__).resolve().parent.parent
-    sweep_base = project_root / "dqn_plots" / "sweep"
+    plot_path = Path(__file__).resolve().parent
+    sweep_base = plot_path / "dqn_plots" / "sweep"
     plot_across_runs(sweep_base, n_runs=args.n_runs, map_size=args.map_size)
-
