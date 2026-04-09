@@ -1,24 +1,3 @@
-"""
-One-hot vs discrete-state baseline: mean test success rate averaged over all
-hyperparameter configs in each sweep, then mean ± std across repeats.
-Only reads sweep_summary.csv (no training).
-
-  python DQN/plot_onehot_vs_baseline.py \\
-    --discrete-base-tag baseline_discrete_200k --onehot-base-tag onehot_discrete_200k \\
-    --map-size 8 --discover-repeats
-
-Explicit folder lists:
-
-  python DQN/plot_onehot_vs_baseline.py \\
-    --baseline-tags B_rep1 B_rep2 --onehot-tags O_rep1 O_rep2 --map-size 8
-
-  Fixed hyperparameter config (separate PNG, does not overwrite avg plot):
-
-  python DQN/plot_onehot_vs_baseline.py \\
-    --discrete-base-tag baseline_discrete_200k --onehot-base-tag onehot_discrete_200k \\
-    --map-size 8 --discover-repeats --fixed-config cfg5_more_explore
-"""
-
 from __future__ import annotations
 
 import os

@@ -1,17 +1,3 @@
-"""
-Dense reward shaping for FrozenLake-v1 (Discrete observations).
-
-Per transition (ignores env's sparse reward and replaces with shaped return):
-  - Each step: step_penalty (default -0.01)
-  - Manhattan distance to goal decreases: +closer_bonus (default +0.05)
-  - increases: +farther_penalty (default -0.05)
-  - unchanged: 0 extra from distance
-  - Episode ends on goal: +goal_reward (default +1.0)
-  - Episode ends in hole: +hole_penalty (default -1.0)
-
-Place **inside** OneHotObservationWrapper: this wrapper sees Discrete state ids from FrozenLake.
-"""
-
 from __future__ import annotations
 
 import gymnasium as gym

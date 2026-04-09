@@ -1,18 +1,3 @@
-"""
-Sweep examples (all use 200k timesteps + configs from sweep_configs_all()):
-  Baseline discrete:  python DQN/run_dqn_sweep.py --no-one-hot --no-reward-shaping \\
-                        --run-tag baseline_discrete_200k --n-repeats 5
-  One-hot:            python DQN/run_dqn_sweep.py --one-hot --no-reward-shaping \\
-                        --run-tag onehot_discrete_200k --n-repeats 5
-  Reward shaping:     python DQN/run_dqn_sweep.py --no-one-hot --reward-shaping \\
-                        --run-tag shaped_discrete_200k --n-repeats 5
-
-  Plot shaped vs baseline (CSV only; --plot avg | best-worst | all):
-                        python DQN/plot_shaped_vs_baseline.py \\
-                        --baseline-base-tag baseline_discrete_200k \\
-                        --shaped-base-tag shaped_discrete_200k --map-size 8 \\
-                        --discover-repeats --plot all
-"""
 import csv
 import json
 import os
