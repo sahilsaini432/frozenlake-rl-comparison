@@ -66,6 +66,31 @@ The default configuration is the tuned PPO setup used for the 8x8 FrozenLake exp
 - `run_ppo.py`  
   Thin command-line entry point for launching PPO experiments.
 
+## CLI Arguments
+
+| Flag | Default | Type | Description |
+|------|---------|------|-------------|
+| `--timesteps` | `200000` | `int` | Total training timesteps |
+| `--hidden_size` | `64` | `int` | Neurons per hidden layer in MLP |
+| `--n_steps` | `2048` | `int` | Rollout buffer size |
+| `--lr` | `1e-3` | `float` | Learning rate |
+| `--deterministic` | `False` | flag | Use deterministic (non-slippery) environment |
+| `--seeds` | `1 2 3` | `int+` | Seeds to run |
+| `--n_eval` | `1000` | `int` | Number of evaluation episodes |
+| `--ent_coef` | `0.0` | `float` | Entropy coefficient |
+| `--gae_lambda` | `0.95` | `float` | GAE lambda |
+| `--vf_coef` | `0.5` | `float` | Value loss coefficient |
+| `--clip_range` | `0.2` | `float` | PPO clip range |
+| `--step_penalty` | `0.0` | `float` | Step penalty for reward shaping |
+| `--manhattan_scale` | `0.0` | `float` | PBRS Manhattan distance shaping scale |
+| `--map_size` | `8` | `int` | Grid size (must exist in `maps.json`) |
+| `--run_name` | `None` | `str` | Name for output folder and plot labels |
+| `--output_dir` | `None` | `str` | Override default output directory |
+
+## Output Structure
+
+Results are saved under `PPO/results/8x8/<run_name>/`:
+
 ## Maps
 
 This module loads maps from the shared project-level `maps.json` file located in the repository root.
